@@ -1,29 +1,4 @@
-{% extends "base.html" %}
-
-{% block content %}
-<h2>Nova Demanda</h2>
-
-<form method="POST" action="/nova_demanda">
-    <div>
-        <label>Título:</label><br>
-        <input type="text" name="titulo" size="50">
-    </div>
-    <br>
-    
-    <div>
-        <label>Descrição:</label><br>
-        <textarea name="descricao" rows="5" cols="50"></textarea>
-    </div>
-    <br>
-    
-    <div>
-        <label>Solicitante:</label><br>
-        <input type="text" name="solicitante">
-    </div>
-    <br>
-    
-    <button type="submit">Salvar</button>
-    <a href="/"><button type="button">Cancelar</button></a>
-</form>
-
-{% endblock %}
+{% extends "base.html" %}{% block title %}Nova demanda{% endblock %}{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('index') }}">Demandas</a><span>/</span><span>Nova demanda</span></div><section class="form-layout"><div class="form-intro"><span class="eyebrow">Novo registro</span><h1>Crie uma nova demanda</h1><p>Registre a solicitação, defina sua prioridade e direcione o atendimento.</p><div class="tip-card"><div><strong>Defina um prazo realista</strong><span>Isso ajuda o painel a destacar o que precisa de atenção.</span></div></div></div>
+<form class="form-card" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="form-card__header"><h2>Informações da demanda</h2><span>Campos com * são obrigatórios</span></div>
+<div class="field"><label for="titulo">Título *</label><input id="titulo" name="titulo" maxlength="200" value="{{ request.form.get('titulo','') }}" placeholder="Resumo objetivo da solicitação" required></div><div class="field"><label for="descricao">Descrição *</label><textarea id="descricao" name="descricao" rows="6" maxlength="5000" placeholder="Contexto, necessidade e resultado esperado" required>{{ request.form.get('descricao','') }}</textarea></div><div class="form-row"><div class="field"><label for="solicitante_id">Solicitante *</label><select id="solicitante_id" name="solicitante_id" required><option value="">Selecione um usuário</option>{% for s in solicitantes %}<option value="{{ s.id }}" {% if request.form.get('solicitante_id', usuario_atual.id if config.AUTH_REQUIRED else '')|string == s.id|string %}selected{% endif %}>{{ s.nome }} — {{ s.email }}{% if not s.ativo %} (inativo){% endif %}</option>{% endfor %}</select></div><div class="field"><label for="prazo">Prazo</label><input id="prazo" type="date" name="prazo" value="{{ request.form.get('prazo','') }}"></div></div><div class="form-row"><div class="field"><label for="status">Status</label><select id="status" name="status">{% for value,label in status_opcoes.items() %}<option value="{{ value }}" {% if request.form.get('status','aberta')==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div><div class="field"><label for="prioridade">Prioridade</label><select id="prioridade" name="prioridade">{% for value,label in prioridade_opcoes.items() %}<option value="{{ value }}" {% if request.form.get('prioridade','media')==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div></div><div class="field"><label for="responsavel_id">Responsável</label><select id="responsavel_id" name="responsavel_id"><option value="">Ainda não atribuído</option>{% for r in responsaveis %}<option value="{{ r.id }}" {% if request.form.get('responsavel_id','') == r.id|string %}selected{% endif %}>{{ r.nome }}</option>{% endfor %}</select></div><div class="form-actions"><a class="button button--secondary" href="{{ url_for('index') }}">Cancelar</a><button class="button button--primary">Criar demanda</button></div></form></section>{% endblock %}

@@ -1,43 +1,6 @@
-{% extends "base.html" %}
-
-{% block content %}
-<h2>Detalhes da Demanda #{{ demanda[0] }}</h2>
-
-<div style="border:1px solid #ccc; padding:15px; margin-bottom:20px;">
-    <h3>{{ demanda[1] }}</h3>
-    <p><strong>Descrição:</strong></p>
-    <p>{{ demanda[2] }}</p>
-    
-    <p><strong>Solicitante:</strong> {{ demanda[3] }}</p>
-    <p><strong>Data de Criação:</strong> {{ demanda[4] }}</p>
-    
-    <br>
-    <a href="/editar/{{ demanda[0] }}"><button>Editar</button></a>
-    <a href="/"><button>Voltar</button></a>
-</div>
-
-<h3>Comentários</h3>
-
-{% for comentario in comentarios %}
-<div style="background:#f0f0f0; padding:10px; margin:10px 0;">
-    <p><strong>{{ comentario[3] }}</strong> em {{ comentario[4] }}</p>
-    <p>{{ comentario[2] }}</p>
-</div>
-{% endfor %}
-
-<h4>Adicionar Comentário</h4>
-<form method="POST" action="/adicionar_comentario/{{ demanda[0] }}">
-    <div>
-        <label>Seu nome:</label><br>
-        <input type="text" name="autor" size="30">
-    </div>
-    <br>
-    <div>
-        <label>Comentário:</label><br>
-        <textarea name="comentario" rows="4" cols="50"></textarea>
-    </div>
-    <br>
-    <button type="submit">Enviar Comentário</button>
-</form>
-
-{% endblock %}
+{% extends "base.html" %}{% block title %}Demanda #{{ demanda.id }}{% endblock %}{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('index') }}">Demandas</a><span>/</span><span>#{{ demanda.id }}</span></div><section class="detail-heading"><div><div class="detail-badges"><span class="id-badge">#{{ demanda.id }}</span><span class="status status--{{ demanda.status }}">{{ status_opcoes[demanda.status] }}</span><span class="priority priority--{{ demanda.prioridade }}"><i></i>{{ prioridade_opcoes[demanda.prioridade] }}</span></div><h1>{{ demanda.titulo }}</h1><p>Solicitação registrada por {{ demanda.solicitante_nome or demanda.solicitante }}{% if demanda.solicitante_email %} ({{ demanda.solicitante_email }}){% endif %}{% if not demanda.solicitante_id %} — vínculo pendente{% endif %}.</p></div>{% if usuario_atual.perfil in ['administrador','gestor'] %}<a class="button button--secondary" href="{{ url_for('editar', demanda_id=demanda.id) }}">Editar demanda</a>{% endif %}</section>
+<div class="detail-grid"><div class="detail-main"><section class="panel content-card"><div class="panel__header"><div><h2>Descrição</h2></div></div><p class="description-text">{{ demanda.descricao }}</p></section>
+<section class="comments-section"><div class="section-heading"><div><h2>Comentários</h2><p>{{ comentarios|length }} comentário{% if comentarios|length != 1 %}s{% endif %}</p></div></div>{% if comentarios %}<div class="comment-list">{% for c in comentarios %}<article class="comment"><div class="avatar avatar--large">{{ c.autor[:1]|upper }}</div><div class="comment__body"><div class="comment__meta"><strong>{{ c.autor }}</strong><time>{{ c.data|data_br }}</time></div><p>{{ c.comentario }}</p></div></article>{% endfor %}</div>{% endif %}{% if usuario_atual.perfil != 'leitor' %}<form class="comment-form" method="post" action="{{ url_for('adicionar_comentario', demanda_id=demanda.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><h3>Adicionar comentário</h3><div class="field"><label class="sr-only" for="comentario">Comentário</label><textarea id="comentario" name="comentario" rows="4" maxlength="5000" placeholder="Escreva uma atualização ou observação..." required></textarea></div><div class="form-actions form-actions--end"><button class="button button--primary">Enviar comentário</button></div></form>{% endif %}</section>
+{% if historico %}<section class="history"><div class="section-heading"><div><h2>Histórico</h2><p>Registro de alterações</p></div></div><div class="timeline">{% for h in historico %}<div class="timeline__item"><i></i><div><strong>{{ h.acao }}</strong><span>{{ h.detalhes or '' }}</span><small>{{ h.usuario_nome or 'Sistema' }} · {{ h.data }}</small></div></div>{% endfor %}</div></section>{% endif %}</div>
+<aside class="detail-sidebar"><section class="panel info-card"><h2>Informações</h2><dl><div><dt>Responsável</dt><dd>{% if demanda.responsavel_nome %}<span class="avatar">{{ demanda.responsavel_nome[:1]|upper }}</span>{{ demanda.responsavel_nome }}{% else %}<span class="muted">Não atribuído</span>{% endif %}</dd></div><div><dt>Prazo</dt><dd class="{% if demanda.prazo and demanda.prazo < hoje and demanda.status not in ['concluida','cancelada'] %}overdue{% endif %}">{{ demanda.prazo or 'Não definido' }}</dd></div><div><dt>Criada em</dt><dd>{{ demanda.data_criacao|data_br }}</dd></div><div><dt>Última atualização</dt><dd>{{ (demanda.data_atualizacao or demanda.data_criacao)|data_br }}</dd></div></dl></section>{% if usuario_atual.perfil=='administrador' %}<form method="post" action="{{ url_for('deletar', demanda_id=demanda.id) }}" onsubmit="return confirm('Excluir permanentemente esta demanda?');"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="danger-action">Excluir demanda</button></form>{% endif %}</aside></div>{% endblock %}
