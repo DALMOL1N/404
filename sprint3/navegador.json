@@ -1,0 +1,19 @@
+{
+  "data": "2026-09-22T23:22:31.271Z",
+  "baseFicticia": 63,
+  "casos": [
+    "acesso direto",
+    "filtros combinados 22 registros",
+    "página 2 com 10 registros",
+    "salto página 3 com 2 registros",
+    "25 por página retorna22",
+    "limpar retorna63",
+    "estado vazio",
+    "mobile390"
+  ],
+  "mobile": {
+    "scroll": 390,
+    "inner": 390
+  },
+  "erros": []
+}

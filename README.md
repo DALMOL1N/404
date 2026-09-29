@@ -28,4 +28,3 @@ Acesse: http://localhost:5000
 
 ---
 
-*Desenvolvido em 2024*

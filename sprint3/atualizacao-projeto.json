@@ -1,0 +1,25 @@
+{
+  "pasta": "/Users/murilotrevisoldalmolin/Downloads/sgdi-404-v2",
+  "backup": "/Users/murilotrevisoldalmolin/Downloads/sgdi-404-v2-backup-20260922-203312",
+  "arquivos_atualizados": [
+    "demonstracao.py",
+    "README.md",
+    "app.py",
+    "init_db.py",
+    "tests/test_sprint3.py",
+    "tests/test_sprint2.py",
+    "tests/schema_v2.sql",
+    "tests/test_app.py",
+    "static/style.css",
+    "templates/nova_demanda.html",
+    "templates/index.html",
+    "templates/relatorio_solicitantes.html",
+    "templates/base.html",
+    "templates/usuarios.html",
+    "templates/dashboard.html",
+    "templates/editar.html",
+    "templates/detalhes.html"
+  ],
+  "registros_anteriores_preservados": true,
+  "rotas_principais": "HTTP200 sem login"
+}
