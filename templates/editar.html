@@ -1,36 +1,3 @@
-{% extends "base.html" %}
-
-{% block content %}
-<h2>Editar Demanda</h2>
-
-
-<form method="POST" action="/editar/{{ demanda[0] }}">
-    <div>
-        <label>Título:</label><br>
-        <input type="text" name="titulo" value="{{ demanda[1] }}" size="50">
-    </div>
-    <br>
-    
-    <div>
-        <label>Descrição:</label><br>
-        <textarea name="descricao" rows="8" cols="50">{{ demanda[2] }}</textarea>
-    </div>
-    <br>
-    
-    <div>
-        <label>Solicitante:</label><br>
-        <input type="text" name="solicitante" value="{{ demanda[3] }}">
-    </div>
-    <br>
-    
-    <div>
-        <label>Data de Criação:</label><br>
-        <input type="text" value="{{ demanda[4] }}" disabled>
-    </div>
-    <br>
-    
-    <button type="submit">Atualizar</button>
-    <a href="/"><button type="button">Cancelar</button></a>
-</form>
-
-{% endblock %}
+{% extends "base.html" %}{% block title %}Editar #{{ demanda.id }}{% endblock %}{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('index') }}">Demandas</a><span>/</span><a href="{{ url_for('detalhes', demanda_id=demanda.id) }}">#{{ demanda.id }}</a><span>/</span><span>Editar</span></div><section class="form-layout"><div class="form-intro"><span class="eyebrow">Edição</span><h1>Atualize a demanda</h1><p>Altere o andamento, responsável, prioridade ou informações da solicitação.</p><div class="record-card"><span>Código</span><strong>#{{ demanda.id }}</strong><small>Criada em {{ demanda.data_criacao[:10] }}</small></div></div>
+{% if not demanda.solicitante_id %}<p role="status">Vínculo pendente. Nome legado: {{ demanda.solicitante }}. Confirme a identidade antes de selecionar o usuário.</p>{% endif %}<form class="form-card" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="form-card__header"><h2>Informações da demanda</h2><span>Campos com * são obrigatórios</span></div><div class="field"><label for="titulo">Título *</label><input id="titulo" name="titulo" maxlength="200" value="{{ request.form.get('titulo',demanda.titulo) }}" required></div><div class="field"><label for="descricao">Descrição *</label><textarea id="descricao" name="descricao" rows="6" maxlength="5000" required>{{ request.form.get('descricao',demanda.descricao) }}</textarea></div><div class="form-row"><div class="field"><label for="solicitante_id">Solicitante *</label><select id="solicitante_id" name="solicitante_id" required><option value="">Selecione um usuário</option>{% for s in solicitantes %}<option value="{{ s.id }}" {% if request.form.get('solicitante_id', demanda.solicitante_id or '')|string == s.id|string %}selected{% endif %}>{{ s.nome }} — {{ s.email }}{% if not s.ativo %} (inativo){% endif %}</option>{% endfor %}</select></div><div class="field"><label for="prazo">Prazo</label><input id="prazo" type="date" name="prazo" value="{{ request.form.get('prazo',demanda.prazo or '') }}"></div></div><div class="form-row"><div class="field"><label for="status">Status</label><select id="status" name="status">{% for value,label in status_opcoes.items() %}<option value="{{ value }}" {% if request.form.get('status',demanda.status)==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div><div class="field"><label for="prioridade">Prioridade</label><select id="prioridade" name="prioridade">{% for value,label in prioridade_opcoes.items() %}<option value="{{ value }}" {% if request.form.get('prioridade',demanda.prioridade)==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div></div><div class="field"><label for="responsavel_id">Responsável</label><select id="responsavel_id" name="responsavel_id"><option value="">Ainda não atribuído</option>{% for r in responsaveis %}<option value="{{ r.id }}" {% if request.form.get('responsavel_id', demanda.responsavel_id or '')|string==r.id|string %}selected{% endif %}>{{ r.nome }}</option>{% endfor %}</select></div><div class="form-actions"><a class="button button--secondary" href="{{ url_for('detalhes', demanda_id=demanda.id) }}">Cancelar</a><button class="button button--primary">Salvar alterações</button></div></form></section>{% endblock %}

@@ -1,40 +1,25 @@
-{% extends "base.html" %}
-
-{% block content %}
-<h2>Lista de Demandas</h2>
-
-
-<table border="1" cellpadding="10" cellspacing="0" width="100%">
-    <thead>
-        <tr bgcolor="#cccccc">
-            <th>ID</th>
-            <th>Título</th>
-            <th>Solicitante</th>
-            <th>Data</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for demanda in demandas %}
-        <tr>
-            <td>{{ demanda[0] }}</td>
-            <td>{{ demanda[1] }}</td>
-            <td>{{ demanda[3] }}</td>
-            <td>{{ demanda[4] }}</td>
-            <td>
-                <a href="/detalhes/{{ demanda[0] }}">Ver</a>
-                |
-                <a href="/editar/{{ demanda[0] }}">Editar</a>
-                |
-                <a href="/deletar/{{ demanda[0] }}" style="color:red;">Deletar</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-
-<br><br>
-<a href="/nova_demanda"><button>+ Nova Demanda</button></a>
-
-{% endblock %}
+{% extends 'base.html' %}{% block title %}Demandas · SGDI{% endblock %}{% block content %}
+<section class="hero"><div><span class="eyebrow">Operação</span><h1>Demandas</h1><p>{{ total }} registro{% if total != 1 %}s{% endif %} encontrado{% if total != 1 %}s{% endif %}.</p></div>{% if usuario_atual.perfil != 'leitor' %}<a class="button button--primary" href="{{ url_for('nova_demanda') }}">+ Nova demanda</a>{% endif %}</section>
+<form class="filter-panel" method="get" role="search" aria-label="Filtrar demandas">
+ <div class="filter-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><label class="sr-only" for="q">Busca</label><input id="q" type="search" name="q" maxlength="200" value="{{ termo }}" placeholder="Título, descrição, solicitante ou ID"></div>
+ <label class="sr-only" for="status">Status</label><select id="status" name="status"><option value="">Todos os status</option>{% for value,label in status_opcoes.items() %}<option value="{{ value }}" {% if filtro_status==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+ <label class="sr-only" for="prioridade">Prioridade</label><select id="prioridade" name="prioridade"><option value="">Todas as prioridades</option>{% for value,label in prioridade_opcoes.items() %}<option value="{{ value }}" {% if filtro_prioridade==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+ <label class="sr-only" for="responsavel">Responsável</label><select id="responsavel" name="responsavel"><option value="">Todos os responsáveis</option><option value="sem" {% if filtro_responsavel=='sem' %}selected{% endif %}>Sem responsável</option>{% for r in responsaveis %}<option value="{{ r.id }}" {% if filtro_responsavel==r.id|string %}selected{% endif %}>{{ r.nome }}{% if not r.ativo %} (inativo){% endif %}</option>{% endfor %}</select>
+ <label class="sr-only" for="solicitante">Solicitante</label><select id="solicitante" name="solicitante"><option value="">Todos os solicitantes</option><option value="pendente" {% if filtro_solicitante=='pendente' %}selected{% endif %}>Vínculo pendente</option>{% for s in solicitantes %}<option value="{{ s.id }}" {% if filtro_solicitante==s.id|string %}selected{% endif %}>{{ s.nome }} — {{ s.email }}{% if not s.ativo %} (inativo){% endif %}</option>{% endfor %}</select>
+ <label class="sr-only" for="ordenar">Ordenação</label><select id="ordenar" name="ordenar"><option value="recentes" {% if ordenar=='recentes' %}selected{% endif %}>Mais recentes</option><option value="antigas" {% if ordenar=='antigas' %}selected{% endif %}>Mais antigas</option><option value="prioridade" {% if ordenar=='prioridade' %}selected{% endif %}>Prioridade</option><option value="prazo" {% if ordenar=='prazo' %}selected{% endif %}>Prazo</option><option value="titulo" {% if ordenar=='titulo' %}selected{% endif %}>Título A–Z</option></select>
+ <label class="sr-only" for="por_pagina">Registros por página</label><select id="por_pagina" name="por_pagina">{% for n in [10,25,50] %}<option value="{{ n }}" {% if por_pagina==n %}selected{% endif %}>{{ n }} por página</option>{% endfor %}</select>
+ <button class="button button--primary">Aplicar</button><a class="filter-clear" href="{{ url_for('index') }}">Limpar</a>
+</form>
+<section class="panel" aria-live="polite">
+{% if demandas %}<div class="table-wrapper"><table><thead><tr><th>Código</th><th>Demanda</th><th>Status</th><th>Prioridade</th><th>Responsável</th><th>Prazo</th><th><span class="sr-only">Ações</span></th></tr></thead><tbody>
+{% for d in demandas %}<tr><td><span class="id-badge">#{{ d.id }}</span></td><td><a class="demand-title" href="{{ url_for('detalhes', demanda_id=d.id) }}">{{ d.titulo }}</a><span class="demand-description">{{ d.solicitante_nome or d.solicitante }}{% if not d.solicitante_id %} · Vínculo pendente{% endif %}</span></td><td><span class="status status--{{ d.status }}">{{ status_opcoes[d.status] }}</span></td><td><span class="priority priority--{{ d.prioridade }}"><i></i>{{ prioridade_opcoes[d.prioridade] }}</span></td><td>{% if d.responsavel_nome %}<span class="person"><span class="avatar">{{ d.responsavel_nome[:1]|upper }}</span>{{ d.responsavel_nome }}</span>{% else %}<span class="muted">Não atribuído</span>{% endif %}</td><td><time class="{% if d.prazo and d.prazo < hoje and d.status not in ['concluida','cancelada'] %}overdue{% endif %}">{{ d.prazo or '—' }}</time></td><td class="row-actions"><a class="icon-button" href="{{ url_for('detalhes', demanda_id=d.id) }}" aria-label="Ver demanda {{ d.id }}"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></a>{% if usuario_atual.perfil in ['administrador','gestor'] %}<a class="icon-button" href="{{ url_for('editar', demanda_id=d.id) }}" aria-label="Editar demanda {{ d.id }}"><svg viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/></svg></a>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+<nav class="pagination" aria-label="Paginação">
+<span>Exibindo {{ inicio }}–{{ fim }} de {{ total }} · Página {{ pagina }} de {{ paginas }}</span>
+{% if paginas > 1 %}<div class="pagination-links">
+{% if pagina > 1 %}<a href="{{ page_url(1) }}" aria-label="Primeira página">Primeira</a><a href="{{ page_url(pagina-1) }}" aria-label="Página anterior">Anterior</a>{% endif %}
+{% for n in page_numbers %}<a href="{{ page_url(n) }}" {% if n==pagina %}aria-current="page"{% endif %} aria-label="Página {{ n }}">{{ n }}</a>{% endfor %}
+{% if pagina < paginas %}<a href="{{ page_url(pagina+1) }}" aria-label="Próxima página">Próxima</a><a href="{{ page_url(paginas) }}" aria-label="Última página">Última</a>{% endif %}
+</div><form class="page-jump" method="get">{% for key,value in query.items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}<label for="pagina">Ir para página</label><input id="pagina" name="pagina" type="number" min="1" max="{{ paginas }}" value="{{ pagina }}" required><button class="button button--secondary">Ir</button></form>{% endif %}</nav>
+{% else %}<div class="empty-state"><h2>Nenhuma demanda encontrada</h2><p>Ajuste os filtros ou crie uma nova solicitação.</p></div>{% endif %}
+</section>{% endblock %}
