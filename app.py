@@ -6,6 +6,8 @@ import os
 import re
 import secrets
 import sqlite3
+import uuid
+from auditoria import record, changes, register as register_audit
 from datetime import date, datetime
 from functools import wraps
 from pathlib import Path
@@ -48,6 +50,9 @@ def create_app(test_config=None):
         CRITICAL_WEIGHT=2,
         AUTH_REQUIRED=os.environ.get("SGDI_REQUIRE_LOGIN") == "1",
     )
+    def safe_exception_log(_exception):
+        app.logger.error('sgdi.internal_error request_id=%s',g.get('request_id',''))
+    app.log_exception = safe_exception_log
     if test_config: app.config.update(test_config)
     if not app.config["AUTH_REQUIRED"]:
         app.config["SECRET_KEY"] = app.config.get("SECRET_KEY") or secrets.token_hex(32)
@@ -82,6 +87,8 @@ def create_app(test_config=None):
 
     @app.before_request
     def prepare_request():
+        g.request_id = uuid.uuid4().hex
+        g.audit_recorded = False
         session.setdefault("csrf_token", secrets.token_urlsafe(32))
         g.usuario = None
         if not app.config['AUTH_REQUIRED']:
@@ -108,7 +115,9 @@ def create_app(test_config=None):
     def login_required(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
-            if g.usuario is None: return redirect(url_for("login", proximo=request.full_path.rstrip("?")))
+            if g.usuario is None:
+                record(get_db(),'acesso.negado',result='falha');get_db().commit()
+                return redirect(url_for("login", proximo=request.full_path.rstrip("?")))
             return view(*args, **kwargs)
         return wrapped
 
@@ -171,7 +180,7 @@ def create_app(test_config=None):
 
     def safe_next(target):
         parsed = urlsplit(target or "")
-        return target if not parsed.netloc and parsed.path.startswith("/") and not parsed.path.startswith("//") else url_for("dashboard")
+        return target if not parsed.scheme and not parsed.netloc and parsed.path.startswith("/") and not parsed.path.startswith("//") and "\\" not in target and not any(ord(c)<32 for c in target) else url_for("dashboard")
 
     @app.route("/login", methods=["GET","POST"])
     def login():
@@ -180,15 +189,19 @@ def create_app(test_config=None):
             email = value("email","e-mail",5,254); password = request.form.get("senha","")
             user = get_db().execute("SELECT * FROM usuarios WHERE email=? AND ativo=1", ((email or "").lower(),)).fetchone()
             if user and check_password_hash(user["senha_hash"],password):
+                record(get_db(),'autenticacao.sucesso',resource='sessao',actor=user);get_db().commit()
                 target = safe_next(request.form.get("proximo")); session.clear()
                 session["usuario_id"] = user["id"]; session["csrf_token"] = secrets.token_urlsafe(32)
                 return redirect(target)
+            record(get_db(),'autenticacao.falha',resource='sessao',result='falha');get_db().commit()
             flash("E-mail ou senha inválidos.","error")
         return render_template("login.html")
 
     @app.post("/logout")
     @login_required
-    def logout(): session.clear(); return redirect(url_for("login"))
+    def logout():
+        record(get_db(),'sessao.encerrada',resource='sessao');get_db().commit()
+        session.clear(); return redirect(url_for("login"))
 
     def managerial_data(force_critical=False):
         selected=dashboard_filters(request.args, STATUS, PRIORIDADES)
@@ -224,6 +237,7 @@ def create_app(test_config=None):
         writer.writerow([]);writer.writerow(['Filtros aplicados'])
         for key,value in data['filtros'].items(): writer.writerow([key,safe(value or 'Todos')])
         writer.writerow(['Critério obrigatório','Prioridade crítica, prazo vencido, status não concluído nem cancelado'])
+        record(get_db(),'relatorio.exportado',resource='dashboard',count=len(data['demandas']));get_db().commit()
         return Response('\ufeff'+buffer.getvalue(),mimetype='text/csv; charset=utf-8',headers={
             'Content-Disposition':'attachment; filename="sgdi-criticas-atrasadas.csv"','Cache-Control':'no-store'})
 
@@ -307,6 +321,7 @@ def create_app(test_config=None):
                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",(*form,db.execute("SELECT nome FROM usuarios WHERE id=?", (form[2],)).fetchone()[0],g.usuario["id"],now,now))
                 if form[3] == "concluida": db.execute("UPDATE demandas SET data_conclusao=? WHERE id=?",(now,cursor.lastrowid))
                 audit(db,cursor.lastrowid,"Demanda criada",f"Solicitante ID: {form[2]}; status: {STATUS[form[3]]}; prioridade: {PRIORIDADES[form[4]]}")
+                record(db,'demanda.criada','demanda',cursor.lastrowid,changeset=changes({},dict(zip(('titulo','descricao','solicitante_id','status','prioridade','responsavel_id','prazo'),form))))
                 db.commit(); flash("Demanda criada com sucesso.","success")
                 return redirect(url_for("detalhes",demanda_id=cursor.lastrowid))
         return render_template("nova_demanda.html",responsaveis=responsaveis(),solicitantes=solicitantes())
@@ -321,14 +336,15 @@ def create_app(test_config=None):
             if valid_demand_form(form):
                 labels=("Título","Descrição","Solicitante","Status","Prioridade","Responsável","Prazo")
                 old=(demand["titulo"],demand["descricao"],demand["solicitante_id"],demand["status"],demand["prioridade"],demand["responsavel_id"],demand["prazo"])
-                changes=[f"{label} alterado" for label,a,b in zip(labels,old,form) if a!=b]
+                display_changes=[f"{label} alterado" for label,a,b in zip(labels,old,form) if a!=b]
                 db=get_db(); now=datetime.now().isoformat(" ","seconds")
                 if demand["solicitante_id"] != form[2]:
-                    changes.append(f"Solicitante ID: {demand['solicitante_id'] or 'pendente'} -> {form[2]}")
+                    display_changes.append(f"Solicitante ID: {demand['solicitante_id'] or 'pendente'} -> {form[2]}")
                 db.execute("""UPDATE demandas SET titulo=?,descricao=?,solicitante_id=?,status=?,prioridade=?,responsavel_id=?,prazo=?,solicitante=?,data_atualizacao=? WHERE id=?""",(*form,db.execute("SELECT nome FROM usuarios WHERE id=?", (form[2],)).fetchone()[0],now,demanda_id))
                 if demand["status"] != form[3]:
                     db.execute("UPDATE demandas SET data_conclusao=? WHERE id=?",(now if form[3] == "concluida" else None,demanda_id))
-                audit(db,demanda_id,"Demanda atualizada","; ".join(changes) or "Formulário salvo sem alterações")
+                audit(db,demanda_id,"Demanda atualizada","; ".join(display_changes) or "Formulário salvo sem alterações")
+                record(db,'demanda.alterada','demanda',demanda_id,changeset=changes(dict(demand),dict(zip(('titulo','descricao','solicitante_id','status','prioridade','responsavel_id','prazo'),form))))
                 db.commit(); flash("Demanda atualizada com sucesso.","success")
                 return redirect(url_for("detalhes",demanda_id=demanda_id))
         return render_template("editar.html",demanda=demand,responsaveis=responsaveis(demand["responsavel_id"]),solicitantes=solicitantes(demand["solicitante_id"]))
@@ -351,6 +367,7 @@ def create_app(test_config=None):
         if comment:
             db=get_db(); now=datetime.now().isoformat(" ","seconds")
             db.execute("INSERT INTO comentarios(demanda_id,comentario,autor,usuario_id,data) VALUES (?,?,?,?,?)",(demanda_id,comment,g.usuario["nome"],g.usuario["id"],now))
+            record(db,"comentario.criado","demanda",demanda_id)
             audit(db,demanda_id,"Comentário adicionado"); db.execute("UPDATE demandas SET data_atualizacao=? WHERE id=?",(now,demanda_id)); db.commit()
             flash("Comentário adicionado.","success")
         return redirect(url_for("detalhes",demanda_id=demanda_id))
@@ -359,7 +376,9 @@ def create_app(test_config=None):
     @app.post("/demandas/<int:demanda_id>/excluir")
     @role_required("administrador")
     def deletar(demanda_id):
-        demand_or_404(demanda_id); db=get_db(); db.execute("DELETE FROM demandas WHERE id=?",(demanda_id,)); db.commit()
+        demand_or_404(demanda_id); db=get_db()
+        record(db,'demanda.excluida','demanda',demanda_id)
+        db.execute("DELETE FROM demandas WHERE id=?",(demanda_id,)); db.commit()
         flash("Demanda excluída.","success"); return redirect(url_for("index"))
 
     @app.route("/usuarios",methods=["GET","POST"])
@@ -373,9 +392,14 @@ def create_app(test_config=None):
             elif role not in PERFIS: flash("Perfil inválido.","error")
             elif name and email:
                 try:
-                    db.execute("INSERT INTO usuarios(nome,email,senha_hash,perfil) VALUES (?,?,?,?)",(name,email.lower(),generate_password_hash(password),role)); db.commit()
+                    cursor=db.execute("INSERT INTO usuarios(nome,email,senha_hash,perfil) VALUES (?,?,?,?)",(name,email.lower(),generate_password_hash(password),role))
+                    record(db,'usuario.criado','usuario',cursor.lastrowid,changeset=changes({}, {'perfil':role,'ativo':1}));db.commit()
                     flash("Usuário criado com sucesso.","success"); return redirect(url_for("usuarios"))
-                except sqlite3.IntegrityError: flash("Já existe um usuário com esse e-mail.","error")
+                except sqlite3.IntegrityError:
+                    db.rollback()
+                    if db.execute('SELECT 1 FROM usuarios WHERE email=?',(email.lower(),)).fetchone():
+                        flash("Já existe um usuário com esse e-mail.","error")
+                    else: raise
         return render_template("usuarios.html",usuarios=db.execute("SELECT * FROM usuarios WHERE email != 'operacao-local@sgdi.invalid' ORDER BY ativo DESC,nome COLLATE NOCASE").fetchall())
 
     @app.post("/usuarios/<int:usuario_id>/alternar")
@@ -385,7 +409,8 @@ def create_app(test_config=None):
         if not target: abort(404)
         if usuario_id==g.usuario["id"]: flash("Você não pode desativar sua própria conta.","error")
         else:
-            db=get_db(); db.execute("UPDATE usuarios SET ativo=CASE ativo WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(usuario_id,)); db.commit(); flash("Situação atualizada.","success")
+            db=get_db(); db.execute("UPDATE usuarios SET ativo=CASE ativo WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(usuario_id,))
+            record(db,'usuario.situacao_alterada','usuario',usuario_id,changeset=changes(dict(target),{'ativo':1-target['ativo']}));db.commit();flash("Situação atualizada.","success")
         return redirect(url_for("usuarios"))
 
     @app.errorhandler(400)
@@ -396,9 +421,33 @@ def create_app(test_config=None):
     def not_found(_error): return render_template("404.html"),404
     @app.errorhandler(500)
     def server_error(_error):
+        g.audit_recorded = False
         db=g.pop("db",None)
         if db is not None: db.rollback(); db.close()
         return render_template("500.html"),500
+    register_audit(app,get_db,role_required)
+
+    @app.after_request
+    def audit_response(response):
+        response.headers['X-Request-ID'] = g.get('request_id','')
+        response.headers['Cache-Control'] = 'no-store' if request.endpoint != 'static' else response.headers.get('Cache-Control','no-cache')
+        if not g.get('audit_recorded') and request.endpoint != 'static':
+            event = None
+            if response.status_code >= 500: event='sistema.erro'
+            elif response.status_code == 403: event='acesso.negado'
+            elif response.status_code in (400,413): event='requisicao.recusada'
+            elif request.method == 'POST' and response.status_code < 400: event='operacao.recusada'
+            if event:
+                try:
+                    db=get_db();db.rollback()
+                    record(db,event,result='falha');db.commit()
+                except sqlite3.Error:
+                    # Constant fallback: never include SQL, form, password or exception payload.
+                    app.logger.error('sgdi.audit_storage_failure request_id=%s',g.get('request_id',''))
+                    response=app.make_response(('Auditoria indisponível. Tente novamente.',503))
+                    response.headers['X-Request-ID']=g.get('request_id','')
+                    response.headers['Cache-Control']='no-store'
+        return response
     return app
 
 if __name__ == "__main__":
