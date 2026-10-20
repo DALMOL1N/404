@@ -15,6 +15,11 @@ from flask import Flask, abort, flash, g, redirect, render_template, request, se
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from init_db import initialize_database
+from analytics import filters as dashboard_filters, report as dashboard_report
+import csv
+import io
+from flask import jsonify, Response
+from zoneinfo import ZoneInfo
 
 BASE_DIR = Path(__file__).resolve().parent
 STATUS = {"aberta":"Aberta","em_analise":"Em análise","em_andamento":"Em andamento","aguardando":"Aguardando","concluida":"Concluída","cancelada":"Cancelada"}
@@ -39,6 +44,8 @@ def create_app(test_config=None):
         SESSION_COOKIE_SECURE=os.environ.get("APP_ENV") == "production",
         MAX_CONTENT_LENGTH=1_000_000,
         PER_PAGE=10,
+        COMPANY_NAME=os.environ.get("SGDI_COMPANY_NAME", "Equipe 404"),
+        CRITICAL_WEIGHT=2,
         AUTH_REQUIRED=os.environ.get("SGDI_REQUIRE_LOGIN") == "1",
     )
     if test_config: app.config.update(test_config)
@@ -183,18 +190,42 @@ def create_app(test_config=None):
     @login_required
     def logout(): session.clear(); return redirect(url_for("login"))
 
+    def managerial_data(force_critical=False):
+        selected=dashboard_filters(request.args, STATUS, PRIORIDADES)
+        if force_critical: selected['criticas_atrasadas']='1'
+        today=app.config.get('REPORT_TODAY') or datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+        return dashboard_report(get_db(), selected, STATUS, PRIORIDADES, today, app.config['CRITICAL_WEIGHT'])
+
     @app.get("/")
     @login_required
     def dashboard():
-        db = get_db()
-        totals = db.execute("""SELECT COUNT(*) total, COALESCE(SUM(status='aberta'),0) abertas,
-          COALESCE(SUM(status='em_andamento'),0) em_andamento, COALESCE(SUM(status='concluida'),0) concluidas,
-          COALESCE(SUM(prazo<date('now') AND status NOT IN ('concluida','cancelada')),0) atrasadas FROM demandas""").fetchone()
-        recent = db.execute("""SELECT d.*,u.nome responsavel_nome FROM demandas d LEFT JOIN usuarios u ON u.id=d.responsavel_id
-          ORDER BY d.data_atualizacao DESC,d.id DESC LIMIT 6""").fetchall()
-        return render_template("dashboard.html",totais=totals,recentes=recent,
-          por_status=db.execute("SELECT status,COUNT(*) total FROM demandas GROUP BY status").fetchall(),
-          por_prioridade=db.execute("SELECT prioridade,COUNT(*) total FROM demandas GROUP BY prioridade").fetchall())
+        return render_template('dashboard.html', report=managerial_data(), responsaveis=get_db().execute(
+            "SELECT id,nome,ativo FROM usuarios WHERE id != ? ORDER BY nome,id", (app.config.get('LOCAL_ACTOR_ID',-1),)).fetchall())
+
+    @app.get('/api/dashboard')
+    @login_required
+    def dashboard_api():
+        response=jsonify(managerial_data()); response.headers['Cache-Control']='no-store'; return response
+
+    @app.get('/dashboard/exportar.csv')
+    @login_required
+    def dashboard_export():
+        data=managerial_data(force_critical=True)
+        buffer=io.StringIO(newline=''); writer=csv.writer(buffer, delimiter=';')
+        def safe(value):
+            text=str(value if value is not None else '')
+            return "'"+text if text.lstrip().startswith(('=','+','-','@')) else text
+        writer.writerow([safe(app.config['COMPANY_NAME']), 'Relatório de demandas críticas atrasadas'])
+        writer.writerow(['Gerado em',datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat(' ', 'seconds')])
+        writer.writerow(['Quantidade',len(data['demandas'])]);writer.writerow([])
+        writer.writerow(['ID','Título','Solicitante','Responsável','Status','Prioridade','Prazo','Criação'])
+        for r in data['demandas']:
+            writer.writerow([safe(r[k]) for k in ('id','titulo','solicitante_nome','responsavel_nome','status_nome','prioridade_nome','prazo','data_criacao')])
+        writer.writerow([]);writer.writerow(['Filtros aplicados'])
+        for key,value in data['filtros'].items(): writer.writerow([key,safe(value or 'Todos')])
+        writer.writerow(['Critério obrigatório','Prioridade crítica, prazo vencido, status não concluído nem cancelado'])
+        return Response('\ufeff'+buffer.getvalue(),mimetype='text/csv; charset=utf-8',headers={
+            'Content-Disposition':'attachment; filename="sgdi-criticas-atrasadas.csv"','Cache-Control':'no-store'})
 
     @app.get("/demandas")
     @login_required
@@ -274,6 +305,7 @@ def create_app(test_config=None):
                 db=get_db(); now=datetime.now().isoformat(" ","seconds")
                 cursor=db.execute("""INSERT INTO demandas(titulo,descricao,solicitante_id,status,prioridade,responsavel_id,prazo,solicitante,criado_por_id,data_criacao,data_atualizacao)
                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",(*form,db.execute("SELECT nome FROM usuarios WHERE id=?", (form[2],)).fetchone()[0],g.usuario["id"],now,now))
+                if form[3] == "concluida": db.execute("UPDATE demandas SET data_conclusao=? WHERE id=?",(now,cursor.lastrowid))
                 audit(db,cursor.lastrowid,"Demanda criada",f"Solicitante ID: {form[2]}; status: {STATUS[form[3]]}; prioridade: {PRIORIDADES[form[4]]}")
                 db.commit(); flash("Demanda criada com sucesso.","success")
                 return redirect(url_for("detalhes",demanda_id=cursor.lastrowid))
@@ -294,6 +326,8 @@ def create_app(test_config=None):
                 if demand["solicitante_id"] != form[2]:
                     changes.append(f"Solicitante ID: {demand['solicitante_id'] or 'pendente'} -> {form[2]}")
                 db.execute("""UPDATE demandas SET titulo=?,descricao=?,solicitante_id=?,status=?,prioridade=?,responsavel_id=?,prazo=?,solicitante=?,data_atualizacao=? WHERE id=?""",(*form,db.execute("SELECT nome FROM usuarios WHERE id=?", (form[2],)).fetchone()[0],now,demanda_id))
+                if demand["status"] != form[3]:
+                    db.execute("UPDATE demandas SET data_conclusao=? WHERE id=?",(now if form[3] == "concluida" else None,demanda_id))
                 audit(db,demanda_id,"Demanda atualizada","; ".join(changes) or "Formulário salvo sem alterações")
                 db.commit(); flash("Demanda atualizada com sucesso.","success")
                 return redirect(url_for("detalhes",demanda_id=demanda_id))
