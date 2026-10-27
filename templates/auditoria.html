@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Auditoria{% endblock %}
+{% block content %}
+<section class="audit-page-head"><div><span class="eyebrow">SPRINT 05 · RASTREABILIDADE</span><h1>Auditoria do sistema</h1><p>Histórico central de ações, acessos e alterações. Datas em UTC.</p></div><a class="button button--primary" href="{{ export_url }}">Exportar JSON</a></section>
+{% if not config.AUTH_REQUIRED %}<div class="alert alert--error">Modo local sem login: os eventos identificam a operação local, não uma pessoa. Para autoria individual, execute iniciar_autenticado.py.</div>{% endif %}
+<form method="get" class="audit-filters">
+<label>De<input type="date" name="inicio" value="{{ filtros.inicio }}"></label><label>Até<input type="date" name="fim" value="{{ filtros.fim }}"></label>
+<label>Usuário ID<input name="usuario" inputmode="numeric" value="{{ filtros.usuario }}" placeholder="Todos"></label>
+<label>Evento<select name="evento"><option value="">Todos</option>{% for key,label in eventos.items() %}<option value="{{ key }}" {% if filtros.evento==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Resultado<select name="resultado"><option value="">Todos</option><option value="sucesso" {% if filtros.resultado=='sucesso' %}selected{% endif %}>Sucesso</option><option value="falha" {% if filtros.resultado=='falha' %}selected{% endif %}>Falha</option></select></label>
+<label>Recurso ID<input name="recurso_id" value="{{ filtros.recurso_id }}" inputmode="numeric" placeholder="Todos"></label>
+<label class="audit-wide">Requisição<input name="request_id" value="{{ filtros.request_id }}" maxlength="32" placeholder="Identificador de 32 caracteres"></label>
+<div><button class="button button--primary">Filtrar</button> <a class="button" href="{{ url_for('auditoria.index') }}">Limpar</a></div>
+</form>
+<p><strong>{{ total }}</strong> {{ "evento encontrado" if total == 1 else "eventos encontrados" }} · Página {{ pagina }} de {{ paginas }} · Até 25 eventos por página.</p>
+<p class="muted">A consulta também gera um registro de auditoria, visível na próxima atualização. Registros anteriores à implantação não são reconstruídos.</p>
+<div class="audit-events">
+{% for row in registros %}
+<article class="audit-event">
+<div class="audit-event-head"><h2>{{ eventos.get(row.evento,row.evento) }}</h2><span class="audit-result {% if row.resultado=='falha' %}audit-failure{% endif %}">{{ row.resultado|capitalize }}</span></div>
+<p><strong>#{{ row.id }}</strong> · {{ row.instante }} · {{ row.recurso }}{% if row.recurso_id %} #{{ row.recurso_id }}{% endif %}</p>
+<p>Autor: {% if row.identidade=='autenticada' %}Usuário #{{ row.usuario_id }} · autenticado{% elif row.identidade=='local' %}Operação local · sem identificação pessoal{% else %}Não autenticado{% endif %}</p>
+<p class="audit-id">Requisição: <code>{{ row.request_id }}</code></p>
+<details><summary>Detalhes do evento</summary><pre>{{ row.detalhes_json }}</pre></details>
+</article>
+{% else %}<div class="card"><h2>Nenhum evento encontrado</h2><p>Altere os filtros ou realize uma ação no sistema.</p></div>{% endfor %}
+</div>
+<nav class="audit-pages" aria-label="Paginação da auditoria">{% if pagina>1 %}<a class="button" href="{{ page_url(pagina-1) }}">Anterior</a>{% endif %}{% if pagina<paginas %}<a class="button" href="{{ page_url(pagina+1) }}">Próxima</a>{% endif %}</nav>
+<p class="muted">Consulta e exportação: administrador e gestor. Sem edição ou exclusão pela aplicação. Exportações limitadas a 1000 eventos; use os filtros. A retenção deve ser acordada com o cliente.</p>
+{% endblock %}

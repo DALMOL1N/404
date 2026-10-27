@@ -1,0 +1,43 @@
+{
+  "servico": "sgdi",
+  "gerado_em": "2026-10-20T22:59:33.873156+00:00",
+  "fuso": "UTC",
+  "filtros": {
+    "inicio": "",
+    "fim": "",
+    "usuario": "",
+    "evento": "demanda.alterada",
+    "resultado": "",
+    "recurso_id": "",
+    "request_id": ""
+  },
+  "quantidade": 1,
+  "eventos": [
+    {
+      "id": 6,
+      "instante": "2026-10-20T22:57:06.698+00:00",
+      "servico": "sgdi",
+      "evento": "demanda.alterada",
+      "resultado": "sucesso",
+      "usuario_id": 1,
+      "identidade": "autenticada",
+      "recurso": "demanda",
+      "recurso_id": 1,
+      "request_id": "294f58d5278d447e8f4b71dc57a4e1ae",
+      "detalhes": {
+        "rota": "/demandas/<int:demanda_id>/editar",
+        "metodo": "POST",
+        "alteracoes": {
+          "status": {
+            "antes": "aberta",
+            "depois": "em_andamento"
+          },
+          "responsavel_id": {
+            "antes": null,
+            "depois": 1
+          }
+        }
+      }
+    }
+  ]
+}

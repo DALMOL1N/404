@@ -1,0 +1,35 @@
+name: Testes Windows e Linux
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    env:
+      PYTHONUTF8: '1'
+      PYTHONTZPATH: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+      - name: Conferir fuso horario
+        run: python -c "from zoneinfo import ZoneInfo; print(ZoneInfo('America/Sao_Paulo'))"
+      - name: Executar suite completa
+        run: python -m unittest discover -s tests -v
+      - name: Verificar inicializacao da demonstracao
+        run: python -c "import runpy; app=runpy.run_path('demo_sprint5.py')['app']; response=app.test_client().get('/login'); assert response.status_code == 200; print('Demonstracao inicializada')"
+      - name: Verificar preparador Windows
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call PREPARAR_WINDOWS.bat

@@ -1,0 +1,9 @@
+Verificação real no Chrome em 2026-10-20T22:59:34.312Z
+Login admin: OK
+Auditoria: OK
+Filtro demanda.alterada: OK
+Exportação JSON: 1 evento
+Exclusão preservada na consulta: OK
+Mobile: {"page":390,"viewport":390}
+Leitor: HTTP 403
+Erros JavaScript: []
