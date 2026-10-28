@@ -10,7 +10,7 @@ disponíveis no momento da revisão; não comprova trabalho ainda não enviado.
 | --- | --- | --- |
 | Ricardo / iWERNERi | `c02a975`: requisitos e checklist da Sprint 3 | Documentação publicada. Não foi localizado commit próprio com `init_db.py` atualizado ou `audit_schema.py` das Sprints 4/5. |
 | Naubert | `6c48195`: adiciona `analytics.py` e `auditoria.py`; `ddb1584`, na branch `naubert-1-registro` | Os módulos correspondem aos componentes preparados para as Sprints 4/5. O segundo commit só remove a descrição inicial de `analytics.py`; não acrescenta funcionalidade. O primeiro usa a identidade Git genérica “Usuario 404”, sem associação pessoal verificável pelo autor configurado. |
-| Gabriel | `cf668b7`: interface e templates; branch antiga `feature/atualizacao-interface` | A interface publicada corresponde à base da Sprint 3. Não foram localizados os componentes novos do dashboard e da auditoria das Sprints 4/5 nos commits disponíveis. |
+| Gabriel | `cf668b7`: interface e templates; `b5bbad4` no PR #2 | Os 14 arquivos do commit original `b5bbad4` são idênticos aos incorporados em `cf668b7`, na Sprint 3. Seu histórico foi preservado. Não foram localizados os componentes novos do dashboard e da auditoria das Sprints 4/5 nos commits disponíveis. |
 | Tino | `c4561fc`: testes e evidências da Sprint 3 | Os testes foram publicados, mas o commit também inclui banco de execução e arquivos `__pycache__`. Não foram localizados os testes novos das Sprints 4/5. |
 | Murilo | `3f0496b` e `17572af`, PR #3 | Integrações do dashboard e da auditoria publicadas. Corretas como parte da entrega, mas dependentes dos módulos, migração, interface e testes restantes. |
 
@@ -30,7 +30,9 @@ commit não significa que a migração executável foi atualizada.
 ## Integração realizada
 
 As branches de Naubert e de Murilo foram incorporadas com merges que preservam
-seus commits. Um commit de integração acrescenta os componentes ausentes da v5
+seus commits. A branch de Gabriel também foi registrada: suas alterações já
+estavam em `cf668b7`, com conteúdo idêntico, portanto o merge preserva o código v5.
+Um commit de integração acrescenta os componentes ausentes da v5
 já preparada e validada, sem atribuí-los retroativamente aos colegas:
 
 - `init_db.py`, `audit_schema.py`: migração, backup e trilha independente.
