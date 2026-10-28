@@ -1,3 +1,4 @@
+from database import sqlite_transaction
 import re,sqlite3,tempfile,unittest
 from pathlib import Path
 from html import unescape
@@ -7,7 +8,7 @@ class Sprint3Tests(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.db=Path(self.temp.name)/'test.db'
   self.app=create_app(dict(TESTING=True,AUTH_REQUIRED=False,DATABASE=str(self.db)));self.client=self.app.test_client()
-  with sqlite3.connect(self.db) as db:
+  with sqlite_transaction(self.db) as db:
    self.resp=db.execute("INSERT INTO usuarios(nome,email,senha_hash,perfil) VALUES('Bruno Teste','bruno@example.test','unused','colaborador')").lastrowid
    for i in range(63):db.execute("INSERT INTO demandas(titulo,descricao,solicitante,solicitante_id,status,prioridade,responsavel_id,data_criacao) VALUES(?,?,?,?,?,?,?,?)",(f'Demanda {i:03}','Descrição para testes','Administrador',1,'aberta' if i<32 else 'concluida','alta' if i<22 else 'baixa',self.resp if i<27 else None,'2026-09-22 10:00:00'))
  def tearDown(self):self.temp.cleanup()
@@ -47,15 +48,15 @@ class Sprint3Tests(unittest.TestCase):
  def test_cadastro_sem_senha_e_autoria_local(self):
   self.assertEqual(self.post('/usuarios',dict(nome='Carla Teste',email='carla@example.test',perfil='colaborador')).status_code,302)
   self.assertEqual(self.post('/demandas/nova',dict(titulo='Nova demanda local',descricao='Teste de cadastro sem login',solicitante_id='1',status='aberta',prioridade='media')).status_code,302)
-  with sqlite3.connect(self.db) as db:
+  with sqlite_transaction(self.db) as db:
    actor=db.execute("SELECT criado_por_id FROM demandas WHERE titulo='Nova demanda local'").fetchone()[0];self.assertEqual(actor,self.app.config['LOCAL_ACTOR_ID']);self.assertEqual(db.execute('SELECT usuario_id FROM historico ORDER BY id DESC LIMIT 1').fetchone()[0],actor)
  def test_conta_local_nao_e_solicitante(self):
   r=self.post('/demandas/nova',dict(titulo='Inválida local',descricao='Teste solicitante inválido',solicitante_id=str(self.app.config['LOCAL_ACTOR_ID']),status='aberta',prioridade='media'));self.assertEqual(r.status_code,200)
-  with sqlite3.connect(self.db) as db:self.assertEqual(db.execute('SELECT COUNT(*) FROM demandas').fetchone()[0],63)
+  with sqlite_transaction(self.db) as db:self.assertEqual(db.execute('SELECT COUNT(*) FROM demandas').fetchone()[0],63)
  def test_preserva_responsavel_inativo_na_edicao(self):
-  with sqlite3.connect(self.db) as db:db.execute('UPDATE usuarios SET ativo=0 WHERE id=?',(self.resp,))
+  with sqlite_transaction(self.db) as db:db.execute('UPDATE usuarios SET ativo=0 WHERE id=?',(self.resp,))
   r=self.post('/demandas/1/editar',dict(titulo='Demanda editada',descricao='Descrição atualizada',solicitante_id='1',responsavel_id=str(self.resp),status='aberta',prioridade='alta'));self.assertEqual(r.status_code,302)
-  with sqlite3.connect(self.db) as db:self.assertEqual(db.execute('SELECT responsavel_id FROM demandas WHERE id=1').fetchone()[0],self.resp)
+  with sqlite_transaction(self.db) as db:self.assertEqual(db.execute('SELECT responsavel_id FROM demandas WHERE id=1').fetchone()[0],self.resp)
  def test_csrf_sem_login(self):self.assertEqual(self.client.post('/demandas/1/excluir').status_code,400)
  def test_inicializacao_idempotente(self):
   again=create_app(dict(TESTING=True,AUTH_REQUIRED=False,DATABASE=str(self.db)));self.assertEqual(again.config['LOCAL_ACTOR_ID'],self.app.config['LOCAL_ACTOR_ID'])

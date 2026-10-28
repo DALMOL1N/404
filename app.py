@@ -1,5 +1,6 @@
 """SGDI 2.0 — aplicação Flask segura para gestão de demandas."""
 from __future__ import annotations
+from database import sqlite_transaction
 
 import hmac
 import os
@@ -62,7 +63,7 @@ def create_app(test_config=None):
     initialize_database(app.config["DATABASE"], admin_password=app.config.get("ADMIN_INITIAL_PASSWORD"))
 
     if not app.config["AUTH_REQUIRED"]:
-        with sqlite3.connect(app.config["DATABASE"]) as db:
+        with sqlite_transaction(app.config["DATABASE"]) as db:
             actor = db.execute("SELECT id FROM usuarios WHERE email='operacao-local@sgdi.invalid'").fetchone()
             if actor is None:
                 cursor = db.execute("INSERT INTO usuarios(nome,email,senha_hash,perfil) VALUES(?,?,?,'administrador')",

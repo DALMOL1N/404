@@ -1,4 +1,5 @@
 """Demonstração local autenticada. Contas e ações inteiramente fictícias."""
+from database import sqlite_transaction
 import secrets
 import sqlite3
 from pathlib import Path
@@ -7,7 +8,7 @@ from app import create_app
 PASSWORD='DemoSprint5!2026'  # Conta pública de demonstração, nunca usar com dados reais.
 path=Path(__file__).resolve().with_name('demonstracao-sprint5.db')
 app=create_app(dict(AUTH_REQUIRED=True,DATABASE=str(path),SECRET_KEY=secrets.token_hex(32),ADMIN_INITIAL_PASSWORD=PASSWORD,COMPANY_NAME='Equipe 404 · Demonstração Sprint 05'))
-with sqlite3.connect(path) as db:
+with sqlite_transaction(path) as db:
     seeded=db.execute("SELECT 1 FROM demandas WHERE titulo='Auditoria da solicitação de compra'").fetchone()
 if not seeded:
     client=app.test_client()
@@ -20,7 +21,7 @@ if not seeded:
     post('/login',email='admin@404.local',senha='tentativa-ficticia-incorreta')
     post('/login',email='admin@404.local',senha=PASSWORD)
     for role,email in [('gestor','gestor@example.test'),('leitor','leitor@example.test')]:
-        with sqlite3.connect(path) as db:exists=db.execute('SELECT 1 FROM usuarios WHERE email=?',(email,)).fetchone()
+        with sqlite_transaction(path) as db:exists=db.execute('SELECT 1 FROM usuarios WHERE email=?',(email,)).fetchone()
         if not exists:post('/usuarios',nome=role.title()+' Demonstração',email=email,senha=PASSWORD,perfil=role)
     form=dict(titulo='Auditoria da solicitação de compra',descricao='Demanda fictícia para demonstrar rastreabilidade.',solicitante_id='1',status='aberta',prioridade='alta',prazo='2026-12-20')
     response=post('/demandas/nova',**form);did=int(response.location.split('/')[-1])

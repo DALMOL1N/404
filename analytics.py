@@ -1,4 +1,4 @@
-
+"""Indicadores do SGDI calculados sobre uma mesma consulta filtrada."""
 from collections import Counter
 from datetime import date, datetime, timedelta
 from flask import abort

@@ -1,11 +1,12 @@
 """Demonstração isolada com dados explicitamente fictícios."""
+from database import sqlite_transaction
 from datetime import datetime, timedelta
 from pathlib import Path
 import sqlite3
 from app import create_app
 path=Path(__file__).with_name('demonstracao-emergencial.db')
 app=create_app({'DATABASE':str(path),'AUTH_REQUIRED':False,'COMPANY_NAME':'Equipe 404 • Demonstração fictícia'})
-with sqlite3.connect(path) as db:
+with sqlite_transaction(path) as db:
  if not db.execute('SELECT COUNT(*) FROM demandas').fetchone()[0]:
   people=[]
   for i,name in enumerate(['Ana Teste','Bruno Teste','Carla Teste']):
