@@ -1,3 +1,4 @@
+from database import sqlite_transaction
 import sqlite3
 import tempfile
 import unittest
@@ -33,10 +34,10 @@ class SGDITestCase(unittest.TestCase):
     def demand(self,title="Teste d'água"):
         response=self.post("/demandas/nova",{"titulo":title,"descricao":"Descrição com 'aspas'","solicitante_id":"1","status":"aberta","prioridade":"critica","prazo":"2030-12-31"})
         self.assertEqual(response.status_code,302)
-        with sqlite3.connect(self.database) as db: return db.execute("SELECT id FROM demandas WHERE titulo=?",(title,)).fetchone()[0]
+        with sqlite_transaction(self.database) as db: return db.execute("SELECT id FROM demandas WHERE titulo=?",(title,)).fetchone()[0]
 
     def add_user(self,email,role):
-        with sqlite3.connect(self.database) as db:
+        with sqlite_transaction(self.database) as db:
             db.execute("INSERT INTO usuarios(nome,email,senha_hash,perfil) VALUES (?,?,?,?)",(role.title(),email,generate_password_hash("SenhaUsuario!123"),role))
 
     def test_login_e_rotas_protegidas(self):
@@ -61,7 +62,7 @@ class SGDITestCase(unittest.TestCase):
         self.assertIn("Título atualizado".encode(),page.data); self.assertIn("Demanda atualizada".encode(),page.data)
         self.assertEqual(self.client.get(f"/deletar/{demand_id}").status_code,405)
         self.assertEqual(self.post(f"/demandas/{demand_id}/excluir").status_code,302)
-        with sqlite3.connect(self.database) as db:
+        with sqlite_transaction(self.database) as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM comentarios WHERE demanda_id=?",(demand_id,)).fetchone()[0],0)
             self.assertEqual(db.execute("SELECT COUNT(*) FROM historico WHERE demanda_id=?",(demand_id,)).fetchone()[0],0)
 
@@ -72,7 +73,7 @@ class SGDITestCase(unittest.TestCase):
         response=self.client.get("/demandas?prioridade=critica&ordenar=titulo&pagina=2")
         self.assertEqual(response.status_code,200); self.assertIn(b"P\xc3\xa1gina 2 de 2",response.data)
         self.assertEqual(self.client.get("/demandas?ordenar=id);DROP%20TABLE%20demandas;--").status_code,200)
-        with sqlite3.connect(self.database) as db: self.assertEqual(db.execute("SELECT COUNT(*) FROM demandas").fetchone()[0],4)
+        with sqlite_transaction(self.database) as db: self.assertEqual(db.execute("SELECT COUNT(*) FROM demandas").fetchone()[0],4)
 
     def test_perfis_e_permissoes(self):
         demand_id=self.demand()
@@ -97,7 +98,7 @@ class MigrationTestCase(unittest.TestCase):
     def test_migracao_deduplica_remove_orfaos_e_cria_backup(self):
         with tempfile.TemporaryDirectory() as temp:
             database=Path(temp)/"legacy.db"
-            with sqlite3.connect(database) as db:
+            with sqlite_transaction(database) as db:
                 db.executescript("""CREATE TABLE demandas(id INTEGER,titulo TEXT,descricao TEXT,solicitante TEXT,data_criacao TEXT);
                 CREATE TABLE comentarios(id INTEGER,demanda_id INTEGER,comentario TEXT,autor TEXT,data TEXT);
                 INSERT INTO demandas VALUES(3,'Demanda válida','Descrição válida','Maria','2024-01-01');
@@ -109,7 +110,7 @@ class MigrationTestCase(unittest.TestCase):
             self.assertEqual(result["demandas_importadas"],1); self.assertEqual(result["demandas_duplicadas"],1)
             self.assertEqual(result["demandas_invalidas"],1); self.assertEqual(result["comentarios_orfaos_ou_invalidos"],1)
             self.assertTrue(Path(result["backup"]).exists())
-            with sqlite3.connect(database) as db:
+            with sqlite_transaction(database) as db:
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM demandas").fetchone()[0],1)
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM comentarios").fetchone()[0],1)
                 self.assertEqual(db.execute("PRAGMA foreign_key_check").fetchall(),[])
@@ -121,7 +122,7 @@ class MigrationTestCase(unittest.TestCase):
             with self.assertRaises(RuntimeError): initialize_database(database)
             initialize_database(database,admin_password="SenhaInicial!123")
             initialize_database(database,admin_password="ignorada")
-            with sqlite3.connect(database) as db: self.assertEqual(db.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0],1)
+            with sqlite_transaction(database) as db: self.assertEqual(db.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0],1)
 
 
 if __name__ == "__main__": unittest.main()

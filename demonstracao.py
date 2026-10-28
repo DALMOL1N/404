@@ -1,9 +1,10 @@
+from database import sqlite_transaction
 import sys,sqlite3
 from pathlib import Path
 root=Path(__file__).resolve().parent;sys.path.insert(0,str(root))
 from app import create_app
 path=root/'demonstracao.db';app=create_app(dict(DATABASE=str(path),AUTH_REQUIRED=False))
-with sqlite3.connect(path) as db:
+with sqlite_transaction(path) as db:
  if db.execute('SELECT COUNT(*) FROM demandas').fetchone()[0]==0:
   db.execute("UPDATE usuarios SET nome='Ana Souza',email='ana@example.test' WHERE id=1")
   for name,email in [('Bruno Costa','bruno@example.test'),('Carla Lima','carla@example.test')]:db.execute("INSERT INTO usuarios(nome,email,senha_hash,perfil) VALUES(?,?,'unused','colaborador')",(name,email))

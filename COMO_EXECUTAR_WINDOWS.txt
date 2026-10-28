@@ -1,0 +1,44 @@
+SGDI v5 PARA WINDOWS — versão de 27/10/2026
+
+1. Instale Python 3.11 ou superior: https://www.python.org/downloads/windows/
+   Habilite o launcher py ou Add python.exe to PATH.
+2. No GitHub, use Code > Download ZIP e EXTRAIA a pasta inteira.
+   Não execute de dentro do ZIP. Escolha uma pasta gravável pelo seu usuário.
+3. Abra INICIAR_WINDOWS.bat com dois cliques.
+   A primeira instalação precisa de internet para baixar dependências.
+4. Escolha: 1 demonstração; 2 sistema sem login; 3 autenticado; 4 testes; 0 sair.
+5. Abra o endereço informado no navegador. Para parar, use Ctrl+C.
+   Se perguntado se deseja finalizar o arquivo em lotes, confirme.
+
+DEMONSTRAÇÃO — opção 1
+http://127.0.0.1:5056
+E-mail: admin@404.local
+Senha: DemoSprint5!2026
+Alternativas: gestor@example.test e leitor@example.test, mesma senha.
+Contas e senha são públicas e fictícias; usar só com banco demonstrativo.
+
+SISTEMA LOCAL SEM LOGIN — opção 2
+http://127.0.0.1:5050 — autoria registrada como operação local.
+
+AUTENTICADO — opção 3
+http://127.0.0.1:5056
+Na primeira execução, escolha senha de pelo menos 12 caracteres para admin@404.local.
+Banco separado: sgdi-autenticado.db. Chave: .session-secret. Não compartilhe esses
+arquivos. As opções 1 e 3 usam a mesma porta: encerre uma antes de iniciar a outra.
+
+INSTALAÇÃO MANUAL — Prompt de Comando na pasta extraída:
+py -3 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe demo_sprint5.py
+
+TESTES:
+.venv\Scripts\python.exe -m unittest discover -s tests -v
+
+COMPATIBILIDADE
+- tzdata fornece America/Sao_Paulo no Windows.
+- Gunicorn é instalado somente fora do Windows.
+- Conexões SQLite temporárias são fechadas explicitamente após commit/rollback.
+- Arquivos BAT usam caminhos entre aspas e finais de linha CRLF.
+- GitHub Actions executa testes em Windows e Linux: veja a aba Actions.
+
+O menu configura execução local para aula; não instala hospedagem pública.
