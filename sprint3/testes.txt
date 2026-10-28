@@ -1,0 +1,36 @@
+test_inicializacao_idempotente_e_senha_obrigatoria (test_app.MigrationTestCase.test_inicializacao_idempotente_e_senha_obrigatoria) ... ok
+test_migracao_deduplica_remove_orfaos_e_cria_backup (test_app.MigrationTestCase.test_migracao_deduplica_remove_orfaos_e_cria_backup) ... ok
+test_busca_injecao_filtros_ordenacao_e_paginacao (test_app.SGDITestCase.test_busca_injecao_filtros_ordenacao_e_paginacao) ... ok
+test_criar_editar_comentar_historico_e_excluir_em_cascata (test_app.SGDITestCase.test_criar_editar_comentar_historico_e_excluir_em_cascata) ... ok
+test_csrf_validacao_e_limite_de_conteudo (test_app.SGDITestCase.test_csrf_validacao_e_limite_de_conteudo) ... ok
+test_login_e_rotas_protegidas (test_app.SGDITestCase.test_login_e_rotas_protegidas) ... ok
+test_perfis_e_permissoes (test_app.SGDITestCase.test_perfis_e_permissoes) ... ok
+test_usuarios_404_403_e_aliases_legados (test_app.SGDITestCase.test_usuarios_404_403_e_aliases_legados) ... ok
+test_cadastro_vincula_id_e_ignora_nome_livre (test_sprint2.RequesterTests.test_cadastro_vincula_id_e_ignora_nome_livre) ... ok
+test_chave_estrangeira_bloqueia_orfao_e_exclusao_usuario_vinculado (test_sprint2.RequesterTests.test_chave_estrangeira_bloqueia_orfao_e_exclusao_usuario_vinculado) ... ok
+test_erro_validacao_preserva_remocao_responsavel (test_sprint2.RequesterTests.test_erro_validacao_preserva_remocao_responsavel) ... ok
+test_homonimos_filtro_combinado_e_paginacao (test_sprint2.RequesterTests.test_homonimos_filtro_combinado_e_paginacao) ... ok
+test_inativo_preserva_historico_mas_nao_recebe_nova_demanda (test_sprint2.RequesterTests.test_inativo_preserva_historico_mas_nao_recebe_nova_demanda) ... ok
+test_relatorio_conta_status_e_usuarios_sem_demanda (test_sprint2.RequesterTests.test_relatorio_conta_status_e_usuarios_sem_demanda) ... ok
+test_relatorio_e_rotas_respeitam_autenticacao_e_perfis (test_sprint2.RequesterTests.test_relatorio_e_rotas_respeitam_autenticacao_e_perfis) ... ok
+test_renomear_usuario_atualiza_consulta_sem_perder_vinculo (test_sprint2.RequesterTests.test_renomear_usuario_atualiza_consulta_sem_perder_vinculo) ... ok
+test_solicitante_obrigatorio_inexistente_inativo_e_id_malformado (test_sprint2.RequesterTests.test_solicitante_obrigatorio_inexistente_inativo_e_id_malformado) ... ok
+test_troca_solicitante_registra_ids_e_atualiza_contagem (test_sprint2.RequesterTests.test_troca_solicitante_registra_ids_e_atualiza_contagem) ... ok
+test_migracao_v2_preserva_todos_registros_e_pendencias_sem_adivinhar (test_sprint2.UpgradeTests.test_migracao_v2_preserva_todos_registros_e_pendencias_sem_adivinhar) ... ok
+test_acesso_direto_sem_login (test_sprint3.Sprint3Tests.test_acesso_direto_sem_login) ... ok
+test_busca_curingas_literais (test_sprint3.Sprint3Tests.test_busca_curingas_literais) ... ok
+test_cadastro_sem_senha_e_autoria_local (test_sprint3.Sprint3Tests.test_cadastro_sem_senha_e_autoria_local) ... ok
+test_conta_local_nao_e_solicitante (test_sprint3.Sprint3Tests.test_conta_local_nao_e_solicitante) ... ok
+test_csrf_sem_login (test_sprint3.Sprint3Tests.test_csrf_sem_login) ... ok
+test_filtros_individuais_e_combinados (test_sprint3.Sprint3Tests.test_filtros_individuais_e_combinados) ... ok
+test_inicializacao_idempotente (test_sprint3.Sprint3Tests.test_inicializacao_idempotente) ... ok
+test_links_preservam_filtros (test_sprint3.Sprint3Tests.test_links_preservam_filtros) ... ok
+test_paginas_sem_repeticao_nas_cinco_ordenacoes (test_sprint3.Sprint3Tests.test_paginas_sem_repeticao_nas_cinco_ordenacoes) ... ok
+test_preserva_responsavel_inativo_na_edicao (test_sprint3.Sprint3Tests.test_preserva_responsavel_inativo_na_edicao) ... ok
+test_tamanhos_e_limites (test_sprint3.Sprint3Tests.test_tamanhos_e_limites) ... ok
+test_vazio_e_parametros_invalidos (test_sprint3.Sprint3Tests.test_vazio_e_parametros_invalidos) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 5.285s
+
+OK
