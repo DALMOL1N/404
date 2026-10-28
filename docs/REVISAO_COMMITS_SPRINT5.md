@@ -16,6 +16,11 @@ disponíveis no momento da revisão; não comprova trabalho ainda não enviado.
 
 O commit `030f7be` de Naubert só adiciona `RELATORIO_MIGRACAO.md`; o nome do
 commit não significa que a migração executável foi atualizada.
+Há código de migração anterior no commit `4ffe2e5`, na branch separada
+`preparar-migracao-integridade-sgdi`, mas ele não estava na `main` e não contém
+o esquema de auditoria da Sprint 5. Essa branch possui histórico independente;
+não foi mesclada diretamente para evitar tratar seu projeto parcial como a
+aplicação completa. O componente atualizado da v5 foi incluído na integração.
 
 ## Problemas de integração
 
