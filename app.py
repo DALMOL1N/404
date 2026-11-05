@@ -382,6 +382,161 @@ def create_app(test_config=None):
         db.execute("DELETE FROM demandas WHERE id=?",(demanda_id,)); db.commit()
         flash("Demanda excluída.","success"); return redirect(url_for("index"))
 
+    def sanitizar_celula_csv(valor):
+        texto = str(valor if valor is not None else "")
+        return "'" + texto if texto.lstrip().startswith(("=", "+", "-", "@")) else texto
+
+    def consultar_demandas_filtradas(db, args):
+        termo = args.get("q", "").strip()[:200]
+        status = args.get("status", "")
+        prioridade = args.get("prioridade", "")
+        responsavel = args.get("responsavel", "")
+        solicitante = args.get("solicitante", "")
+        ordenacao = args.get("ordenar", "recentes")
+        ordenacao = ordenacao if ordenacao in SORTS else "recentes"
+        if status and status not in STATUS:
+            abort(400, description="Filtro de status inválido.")
+        if prioridade and prioridade not in PRIORIDADES:
+            abort(400, description="Filtro de prioridade inválido.")
+
+        condicoes, parametros = [], []
+        if termo:
+            condicoes.append("(d.titulo LIKE ? ESCAPE '\\' OR d.descricao LIKE ? ESCAPE '\\' OR COALESCE(s.nome,d.solicitante) LIKE ? ESCAPE '\\' OR CAST(d.id AS TEXT)=?)")
+            escapado = termo.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            parametros += [f"%{escapado}%"] * 3 + [termo]
+        if status:
+            condicoes.append("d.status=?")
+            parametros.append(status)
+        if prioridade:
+            condicoes.append("d.prioridade=?")
+            parametros.append(prioridade)
+        if responsavel == "sem":
+            condicoes.append("d.responsavel_id IS NULL")
+        elif re.fullmatch(r"[0-9]{1,18}", responsavel):
+            condicoes.append("d.responsavel_id=?")
+            parametros.append(int(responsavel))
+        elif responsavel:
+            abort(400, description="Filtro de responsável inválido.")
+        if solicitante == "pendente":
+            condicoes.append("d.solicitante_id IS NULL")
+        elif re.fullmatch(r"[0-9]{1,18}", solicitante):
+            condicoes.append("d.solicitante_id=?")
+            parametros.append(int(solicitante))
+        elif solicitante:
+            abort(400, description="Solicitante inválido.")
+
+        clausula_where = " WHERE " + " AND ".join(condicoes) if condicoes else ""
+        joins = " FROM demandas d LEFT JOIN usuarios s ON s.id=d.solicitante_id LEFT JOIN usuarios u ON u.id=d.responsavel_id"
+        registros = db.execute(
+            "SELECT d.*, u.nome responsavel_nome, s.nome solicitante_nome" + joins + clausula_where + f" ORDER BY {SORTS[ordenacao]}",
+            parametros,
+        ).fetchall()
+        filtros_aplicados = dict(q=termo, status=status, prioridade=prioridade, responsavel=responsavel, solicitante=solicitante, ordenar=ordenacao)
+        return registros, filtros_aplicados
+
+    @app.get("/demandas/exportar.csv")
+    @login_required
+    def exportar_demandas_csv():
+        db = get_db()
+        registros, filtros_aplicados = consultar_demandas_filtradas(db, request.args)
+        buffer = io.StringIO(newline="")
+        writer = csv.writer(buffer, delimiter=";")
+        agora_sp = datetime.now(ZoneInfo("America/Sao_Paulo")).isoformat(" ", "seconds")
+        writer.writerow([sanitizar_celula_csv(app.config["COMPANY_NAME"]), "Relatório de demandas filtradas"])
+        writer.writerow(["Gerado em", agora_sp])
+        writer.writerow(["Quantidade", len(registros)])
+        writer.writerow([])
+        writer.writerow(["ID", "Título", "Solicitante", "Responsável", "Status", "Prioridade", "Prazo", "Criação"])
+        for linha in registros:
+            solicitante_exibicao = linha["solicitante_nome"] or linha["solicitante"]
+            responsavel_exibicao = linha["responsavel_nome"] or "Sem responsável"
+            writer.writerow([
+                sanitizar_celula_csv(linha["id"]),
+                sanitizar_celula_csv(linha["titulo"]),
+                sanitizar_celula_csv(solicitante_exibicao),
+                sanitizar_celula_csv(responsavel_exibicao),
+                sanitizar_celula_csv(STATUS[linha["status"]]),
+                sanitizar_celula_csv(PRIORIDADES[linha["prioridade"]]),
+                sanitizar_celula_csv(linha["prazo"] or ""),
+                sanitizar_celula_csv(linha["data_criacao"]),
+            ])
+        writer.writerow([])
+        writer.writerow(["Filtros aplicados"])
+        for chave, valor in filtros_aplicados.items():
+            writer.writerow([chave, sanitizar_celula_csv(valor or "Todos")])
+        record(db, "relatorio.exportado", resource="demandas", count=len(registros))
+        db.commit()
+        return Response(
+            "\ufeff" + buffer.getvalue(),
+            mimetype="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition": 'attachment; filename="sgdi-demandas.csv"',
+                "Cache-Control": "no-store",
+            },
+        )
+
+    @app.post("/demandas/<int:demanda_id>/status")
+    @role_required("administrador", "gestor", "colaborador")
+    def atualizar_status_rapido(demanda_id):
+        demanda = demand_or_404(demanda_id)
+        novo_status = request.form.get("status", "").strip()
+        if novo_status not in STATUS:
+            flash("Status inválido.", "error")
+            return redirect(url_for("detalhes", demanda_id=demanda_id))
+        status_anterior = demanda["status"]
+        if novo_status == status_anterior:
+            flash("A demanda já está com esse status.", "info")
+            return redirect(url_for("detalhes", demanda_id=demanda_id))
+
+        db = get_db()
+        agora = datetime.now().isoformat(" ", "seconds")
+        nova_data_conclusao = agora if novo_status == "concluida" else None
+        db.execute(
+            "UPDATE demandas SET status=?, data_atualizacao=?, data_conclusao=? WHERE id=?",
+            (novo_status, agora, nova_data_conclusao, demanda_id),
+        )
+        detalhe_historico = f"Status: {STATUS[status_anterior]} -> {STATUS[novo_status]}"
+        audit(db, demanda_id, "Status atualizado rapidamente", detalhe_historico)
+        record(
+            db,
+            "demanda.alterada",
+            "demanda",
+            demanda_id,
+            changeset=changes(dict(demanda), {"status": novo_status}),
+        )
+        db.commit()
+        flash("Status da demanda atualizado com sucesso.", "success")
+        return redirect(url_for("detalhes", demanda_id=demanda_id))
+
+    @app.post("/demandas/<int:demanda_id>/assumir")
+    @role_required("administrador", "gestor", "colaborador")
+    def assumir_demanda(demanda_id):
+        demanda = demand_or_404(demanda_id)
+        if g.usuario["email"] == "operacao-local@sgdi.invalid":
+            flash("No modo sem login, selecione um usuário responsável na edição.", "error")
+            return redirect(url_for("detalhes", demanda_id=demanda_id))
+        if demanda["responsavel_id"] == g.usuario["id"]:
+            flash("Você já é o responsável por esta demanda.", "info")
+            return redirect(url_for("detalhes", demanda_id=demanda_id))
+
+        db = get_db()
+        agora = datetime.now().isoformat(" ", "seconds")
+        db.execute(
+            "UPDATE demandas SET responsavel_id=?, data_atualizacao=? WHERE id=?",
+            (g.usuario["id"], agora, demanda_id),
+        )
+        audit(db, demanda_id, "Responsável atribuído", f"Assumida por {g.usuario['nome']}")
+        record(
+            db,
+            "demanda.alterada",
+            "demanda",
+            demanda_id,
+            changeset=changes(dict(demanda), {"responsavel_id": g.usuario["id"]}),
+        )
+        db.commit()
+        flash("Você assumiu a responsabilidade desta demanda.", "success")
+        return redirect(url_for("detalhes", demanda_id=demanda_id))
+
     @app.route("/usuarios",methods=["GET","POST"])
     @role_required("administrador")
     def usuarios():
