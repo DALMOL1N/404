@@ -1,3 +1,10 @@
+SGDI v7 - Sprint 7
+
+Para abrir a demonstracao: extraia toda a pasta e execute DEMO_SPRINT7_WINDOWS.bat.
+Abra http://127.0.0.1:5070/
+Conta ficticia: admin@404.local / DemoSprint7!2026
+Nao use estas credenciais com dados reais.
+
 SGDI v5 PARA WINDOWS — versão de 27/10/2026
 
 1. Instale Python 3.11 ou superior: https://www.python.org/downloads/windows/

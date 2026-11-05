@@ -25,16 +25,19 @@ from flask import jsonify, Response
 from zoneinfo import ZoneInfo
 
 BASE_DIR = Path(__file__).resolve().parent
-STATUS = {"aberta":"Aberta","em_analise":"Em análise","em_andamento":"Em andamento","aguardando":"Aguardando","concluida":"Concluída","cancelada":"Cancelada"}
-PRIORIDADES = {"baixa":"Baixa","media":"Média","alta":"Alta","critica":"Crítica"}
-PERFIS = {"administrador":"Administrador","gestor":"Gestor","colaborador":"Colaborador","leitor":"Leitor"}
-SORTS = {
-    "recentes": "d.data_criacao DESC, d.id DESC",
-    "antigas": "d.data_criacao ASC, d.id ASC",
-    "prioridade": "CASE d.prioridade WHEN 'critica' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 ELSE 4 END, d.data_criacao DESC, d.id DESC",
-    "prazo": "d.prazo IS NULL, d.prazo ASC, d.id DESC",
-    "titulo": "d.titulo COLLATE NOCASE ASC, d.id ASC",
-}
+from catalogo import STATUS, PRIORIDADES, PERFIS, SORTS, VENCIMENTOS
+from consultas import consultar, selecionar
+# Permite integrar o trabalho de cada membro sem publicar uma main quebrada.
+# Importações reais continuam falhando explicitamente se um módulo presente estiver inválido.
+API_V1_AVAILABLE = all((BASE_DIR / path).is_file() for path in (
+    'api.py', 'api_schema.py', 'docs/openapi.json', 'templates/api_docs.html'))
+if API_V1_AVAILABLE:
+    from api import register as register_api, api_error_response, is_api_request
+else:
+    register_api = api_error_response = None
+    def is_api_request():
+        return False  # Sem backend completo, mantém CSRF e erros da interface original.
+
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 def create_app(test_config=None):
@@ -55,6 +58,12 @@ def create_app(test_config=None):
         app.logger.error('sgdi.internal_error request_id=%s',g.get('request_id',''))
     app.log_exception = safe_exception_log
     if test_config: app.config.update(test_config)
+    app.config["API_V1_AVAILABLE"] = API_V1_AVAILABLE
+    if os.environ.get('APP_ENV')=='production' and not app.config['AUTH_REQUIRED']:
+        raise RuntimeError('Em produção, habilite SGDI_REQUIRE_LOGIN=1.')
+    if os.environ.get('SGDI_TRUST_PROXY')=='1':
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app=ProxyFix(app.wsgi_app,x_for=0,x_proto=1,x_host=0,x_port=0,x_prefix=0)
     if not app.config["AUTH_REQUIRED"]:
         app.config["SECRET_KEY"] = app.config.get("SECRET_KEY") or secrets.token_hex(32)
         app.config["ADMIN_INITIAL_PASSWORD"] = app.config.get("ADMIN_INITIAL_PASSWORD") or secrets.token_urlsafe(32)
@@ -90,6 +99,9 @@ def create_app(test_config=None):
     def prepare_request():
         g.request_id = uuid.uuid4().hex
         g.audit_recorded = False
+        g.usuario = None
+        if is_api_request():
+            return  # A API valida Bearer; nunca herda o administrador local nem cookies.
         session.setdefault("csrf_token", secrets.token_urlsafe(32))
         g.usuario = None
         if not app.config['AUTH_REQUIRED']:
@@ -245,45 +257,22 @@ def create_app(test_config=None):
     @app.get("/demandas")
     @login_required
     def index():
-        q=request.args.get("q", "").strip()[:200]
-        status=request.args.get("status", "")
-        priority=request.args.get("prioridade", "")
-        responsible=request.args.get("responsavel", "")
-        requester=request.args.get("solicitante", "")
-        sort=request.args.get("ordenar", "recentes")
-        sort=sort if sort in SORTS else "recentes"
-        if status and status not in STATUS: abort(400, description="Filtro de status inválido.")
-        if priority and priority not in PRIORIDADES: abort(400, description="Filtro de prioridade inválido.")
-        try: page=max(1,int(request.args.get("pagina", "1")))
+        db=get_db()
+        today=app.config.get('REPORT_TODAY') or datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+        selected=selecionar(request.args,today)
+        try: page=max(1,int(request.args.get('pagina','1')))
         except ValueError: page=1
-        try: per_page=int(request.args.get("por_pagina", app.config['PER_PAGE']))
+        try: per_page=int(request.args.get('por_pagina',app.config['PER_PAGE']))
         except ValueError: per_page=app.config['PER_PAGE']
         if per_page not in (10,25,50,app.config['PER_PAGE']): per_page=app.config['PER_PAGE']
-        conditions=[]; params=[]
-        if q:
-            conditions.append("(d.titulo LIKE ? ESCAPE '\\' OR d.descricao LIKE ? ESCAPE '\\' OR COALESCE(s.nome,d.solicitante) LIKE ? ESCAPE '\\' OR CAST(d.id AS TEXT)=?)")
-            escaped=q.replace("\\","\\\\").replace("%","\\%").replace("_","\\_")
-            params += [f"%{escaped}%"]*3+[q]
-        if status: conditions.append("d.status=?"); params.append(status)
-        if priority: conditions.append("d.prioridade=?"); params.append(priority)
-        if responsible == 'sem': conditions.append('d.responsavel_id IS NULL')
-        elif re.fullmatch(r"[0-9]{1,18}", responsible): conditions.append('d.responsavel_id=?'); params.append(int(responsible))
-        elif responsible: abort(400, description="Filtro de responsável inválido.")
-        if requester == 'pendente': conditions.append('d.solicitante_id IS NULL')
-        elif re.fullmatch(r"[0-9]{1,18}", requester): conditions.append('d.solicitante_id=?'); params.append(int(requester))
-        elif requester: abort(400, description="Solicitante inválido.")
-        where=' WHERE '+' AND '.join(conditions) if conditions else ''
-        db=get_db()
-        joins=' FROM demandas d LEFT JOIN usuarios s ON s.id=d.solicitante_id LEFT JOIN usuarios u ON u.id=d.responsavel_id'
-        total=db.execute('SELECT COUNT(*)'+joins+where,params).fetchone()[0]
-        pages=max(1,(total+per_page-1)//per_page); page=min(page,pages)
-        rows=db.execute('SELECT d.*,u.nome responsavel_nome,s.nome solicitante_nome'+joins+where+
-            f' ORDER BY {SORTS[sort]} LIMIT ? OFFSET ?',(*params,per_page,(page-1)*per_page)).fetchall()
-        query=dict(q=q,status=status,prioridade=priority,responsavel=responsible,solicitante=requester,ordenar=sort,por_pagina=per_page)
-        page_url=lambda number: url_for('index',**query,pagina=number)
-        return render_template('index.html',demandas=rows,total=total,pagina=page,paginas=pages,termo=q,
-            filtro_status=status,filtro_prioridade=priority,filtro_responsavel=responsible,filtro_solicitante=requester,
-            ordenar=sort,responsaveis=responsaveis(include_inactive=True),solicitantes=solicitantes(include_inactive=True),
+        total,rows,page,pages=consultar(db,selected,page,per_page)
+        query={**selected['filtros'],'por_pagina':per_page}
+        page_url=lambda number:url_for('index',**query,pagina=number)
+        f=selected['filtros']
+        return render_template('index.html',demandas=rows,total=total,pagina=page,paginas=pages,termo=f['q'],
+            filtro_status=f['status'],filtro_prioridade=f['prioridade'],filtro_responsavel=f['responsavel'],filtro_solicitante=f['solicitante'],
+            filtro_vencimento=f['vencimento'],vencimento_opcoes=VENCIMENTOS,hoje=today.isoformat(),
+            ordenar=f['ordenar'],responsaveis=responsaveis(include_inactive=True),solicitantes=solicitantes(include_inactive=True),
             por_pagina=per_page,inicio=(page-1)*per_page+1 if total else 0,fim=min(page*per_page,total),
             page_url=page_url,query=query,page_numbers=range(max(1,page-2),min(pages,page+2)+1))
 
@@ -387,52 +376,10 @@ def create_app(test_config=None):
         return "'" + texto if texto.lstrip().startswith(("=", "+", "-", "@")) else texto
 
     def consultar_demandas_filtradas(db, args):
-        termo = args.get("q", "").strip()[:200]
-        status = args.get("status", "")
-        prioridade = args.get("prioridade", "")
-        responsavel = args.get("responsavel", "")
-        solicitante = args.get("solicitante", "")
-        ordenacao = args.get("ordenar", "recentes")
-        ordenacao = ordenacao if ordenacao in SORTS else "recentes"
-        if status and status not in STATUS:
-            abort(400, description="Filtro de status inválido.")
-        if prioridade and prioridade not in PRIORIDADES:
-            abort(400, description="Filtro de prioridade inválido.")
-
-        condicoes, parametros = [], []
-        if termo:
-            condicoes.append("(d.titulo LIKE ? ESCAPE '\\' OR d.descricao LIKE ? ESCAPE '\\' OR COALESCE(s.nome,d.solicitante) LIKE ? ESCAPE '\\' OR CAST(d.id AS TEXT)=?)")
-            escapado = termo.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-            parametros += [f"%{escapado}%"] * 3 + [termo]
-        if status:
-            condicoes.append("d.status=?")
-            parametros.append(status)
-        if prioridade:
-            condicoes.append("d.prioridade=?")
-            parametros.append(prioridade)
-        if responsavel == "sem":
-            condicoes.append("d.responsavel_id IS NULL")
-        elif re.fullmatch(r"[0-9]{1,18}", responsavel):
-            condicoes.append("d.responsavel_id=?")
-            parametros.append(int(responsavel))
-        elif responsavel:
-            abort(400, description="Filtro de responsável inválido.")
-        if solicitante == "pendente":
-            condicoes.append("d.solicitante_id IS NULL")
-        elif re.fullmatch(r"[0-9]{1,18}", solicitante):
-            condicoes.append("d.solicitante_id=?")
-            parametros.append(int(solicitante))
-        elif solicitante:
-            abort(400, description="Solicitante inválido.")
-
-        clausula_where = " WHERE " + " AND ".join(condicoes) if condicoes else ""
-        joins = " FROM demandas d LEFT JOIN usuarios s ON s.id=d.solicitante_id LEFT JOIN usuarios u ON u.id=d.responsavel_id"
-        registros = db.execute(
-            "SELECT d.*, u.nome responsavel_nome, s.nome solicitante_nome" + joins + clausula_where + f" ORDER BY {SORTS[ordenacao]}",
-            parametros,
-        ).fetchall()
-        filtros_aplicados = dict(q=termo, status=status, prioridade=prioridade, responsavel=responsavel, solicitante=solicitante, ordenar=ordenacao)
-        return registros, filtros_aplicados
+        today=app.config.get('REPORT_TODAY') or datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+        selected=selecionar(args,today)
+        _,rows,_,_=consultar(db,selected)
+        return rows,selected['filtros']
 
     @app.get("/demandas/exportar.csv")
     @login_required
@@ -582,16 +529,23 @@ def create_app(test_config=None):
         if db is not None: db.rollback(); db.close()
         return render_template("500.html"),500
     register_audit(app,get_db,role_required)
+    if API_V1_AVAILABLE:
+        register_api(app,get_db)
 
     @app.after_request
     def audit_response(response):
+        if is_api_request() and response.status_code >= 400 and not response.is_json:
+            previous=response
+            response=api_error_response(previous.status_code)
+            if 'Allow' in previous.headers:response.headers['Allow']=previous.headers['Allow']
+        response.headers['X-Content-Type-Options']='nosniff'
         response.headers['X-Request-ID'] = g.get('request_id','')
         response.headers['Cache-Control'] = 'no-store' if request.endpoint != 'static' else response.headers.get('Cache-Control','no-cache')
         if not g.get('audit_recorded') and request.endpoint != 'static':
             event = None
             if response.status_code >= 500: event='sistema.erro'
-            elif response.status_code == 403: event='acesso.negado'
-            elif response.status_code in (400,413): event='requisicao.recusada'
+            elif response.status_code in (401,403): event='acesso.negado'
+            elif response.status_code in (400,404,405,409,413,415,422,426,429): event='requisicao.recusada'
             elif request.method == 'POST' and response.status_code < 400: event='operacao.recusada'
             if event:
                 try:
@@ -600,7 +554,7 @@ def create_app(test_config=None):
                 except sqlite3.Error:
                     # Constant fallback: never include SQL, form, password or exception payload.
                     app.logger.error('sgdi.audit_storage_failure request_id=%s',g.get('request_id',''))
-                    response=app.make_response(('Auditoria indisponível. Tente novamente.',503))
+                    response=api_error_response(503) if is_api_request() else app.make_response(('Auditoria indisponível. Tente novamente.',503))
                     response.headers['X-Request-ID']=g.get('request_id','')
                     response.headers['Cache-Control']='no-store'
         return response

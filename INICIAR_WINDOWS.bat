@@ -6,18 +6,23 @@ call PREPARAR_WINDOWS.bat
 if errorlevel 1 goto falha
 :menu
 echo.
-echo SGDI v5 - escolha o modo de execucao
+echo SGDI v7 - escolha o modo de execucao
 echo 1 - Demonstracao da Sprint 5 com dados ficticios e login
 echo 2 - Sistema local sem login
 echo 3 - Sistema autenticado com senha propria
 echo 4 - Executar todos os testes
+echo 5 - Demonstracao da Sprint 7
 echo 0 - Sair
-choice /c 12340 /n /m "Opcao: "
-if errorlevel 5 goto fim
+choice /c 123450 /n /m "Opcao: "
+if errorlevel 6 goto fim
+if errorlevel 5 goto api
 if errorlevel 4 goto testes
 if errorlevel 3 goto autenticado
 if errorlevel 2 goto local
 goto demonstracao
+:api
+call DEMO_SPRINT7_WINDOWS.bat
+goto menu
 :demonstracao
 echo Abra http://127.0.0.1:5056
 echo Conta ficticia: admin@404.local / DemoSprint5!2026
