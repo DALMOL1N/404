@@ -10,6 +10,8 @@ EVENTOS = {
  'demanda.excluida':'Demanda excluída', 'comentario.criado':'Comentário adicionado',
  'usuario.criado':'Usuário criado', 'usuario.situacao_alterada':'Situação do usuário alterada',
  'autenticacao.sucesso':'Login realizado', 'autenticacao.falha':'Login recusado',
+ 'api.token_criado':'Token de integração emitido', 'api.token_revogado':'Token de integração revogado',
+ 'api.consultada':'Consulta pela API',
  'sessao.encerrada':'Saída do sistema', 'acesso.negado':'Acesso negado',
  'requisicao.recusada':'Requisição recusada', 'operacao.recusada':'Operação recusada',
  'sistema.erro':'Erro interno', 'relatorio.exportado':'Relatório exportado',
@@ -29,7 +31,7 @@ def changes(before, after):
 def record(db, event, resource='sistema', resource_id=None, *, result='sucesso', changeset=None, actor=None, count=None):
     if event not in EVENTOS: raise ValueError('Evento de auditoria desconhecido')
     user = actor if actor is not None else g.get('usuario')
-    mode = ('autenticada' if current_app.config['AUTH_REQUIRED'] else 'local') if user else 'anonima'
+    mode = ('autenticada' if (current_app.config['AUTH_REQUIRED'] or g.get('api_authenticated')) else 'local') if user else 'anonima'
     details = {'rota':request.url_rule.rule if request.url_rule else 'desconhecida','metodo':request.method}
     if changeset:
         # Accept only internally generated field changes, never arbitrary form data.
