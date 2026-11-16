@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from werkzeug.security import generate_password_hash
 from audit_schema import SCHEMA as AUDIT_SCHEMA
+from api_schema import SCHEMA as API_SCHEMA
 
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_DATABASE = BASE_DIR / "demandas.db"
@@ -181,13 +182,15 @@ def initialize_database(database_path=DEFAULT_DATABASE, *, admin_password=None):
     needs_requester_upgrade = False
     needs_completion_upgrade = False
     needs_audit_upgrade = False
+    needs_api_upgrade = False
     if existed:
         with sqlite_transaction(path) as probe:
+            needs_api_upgrade = not _table_exists(probe, "api_tokens")
             needs_rebuild = _needs_rebuild(probe)
             needs_audit_upgrade = not _table_exists(probe, "auditoria")
             needs_requester_upgrade = _table_exists(probe, "demandas") and "solicitante_id" not in _columns(probe, "demandas")
             needs_completion_upgrade = _table_exists(probe, "demandas") and "data_conclusao" not in _columns(probe, "demandas")
-    backup = _backup(path) if needs_rebuild or needs_requester_upgrade or needs_completion_upgrade or needs_audit_upgrade else None
+    backup = _backup(path) if needs_rebuild or needs_requester_upgrade or needs_completion_upgrade or needs_audit_upgrade or needs_api_upgrade else None
     stats = {"backup": str(backup) if backup else None}
     try:
         with sqlite_transaction(path) as conn:
@@ -196,6 +199,7 @@ def initialize_database(database_path=DEFAULT_DATABASE, *, admin_password=None):
             if needs_rebuild: stats.update(_rebuild_legacy(conn))
             conn.executescript(SCHEMA)
             conn.executescript(AUDIT_SCHEMA)
+            conn.executescript(API_SCHEMA)
             # Preserve legacy names for explicit reconciliation; names are not identities.
             if "solicitante_id" not in _columns(conn, "demandas"):
                 conn.execute("ALTER TABLE demandas ADD COLUMN solicitante_id INTEGER REFERENCES usuarios(id) ON DELETE RESTRICT")
