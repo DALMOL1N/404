@@ -1,0 +1,1362 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SGDI API de integração",
+    "version": "7.0.0",
+    "description": "API REST v1. Tokens opacos próprios por usuário; não implementa um servidor OAuth. Interface local sem login não autoriza a API. HTTPS obrigatório fora do loopback. Consultas visíveis a todos os perfis autenticados; cadastro por administrador/gestor/colaborador, alteração por administrador/gestor e exclusão apenas por administrador. Datas de prazo AAAA-MM-DD, vencimentos no fuso America/Sao_Paulo. Datas históricas seguem o formato legado do SGDI. Sem exposição de e-mail, hash de senha ou conteúdo da auditoria."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/token": {
+      "post": {
+        "summary": "Emitir token com credenciais do usuário",
+        "responses": {
+          "200": {
+            "description": "Operação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Token"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Erro 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Erro 415",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Erro 429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Segundos antes de tentar novamente"
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credenciais"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Revogar o token apresentado",
+        "responses": {
+          "204": {
+            "description": "Operação realizada"
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demandas": {
+      "get": {
+        "summary": "Listar demandas com filtros e paginação",
+        "responses": {
+          "200": {
+            "description": "Operação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Demanda"
+                      }
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Erro 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "aberta",
+                "em_analise",
+                "em_andamento",
+                "aguardando",
+                "concluida",
+                "cancelada"
+              ]
+            }
+          },
+          {
+            "name": "prioridade",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "media",
+                "alta",
+                "critica"
+              ]
+            }
+          },
+          {
+            "name": "responsavel",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "ID ou sem"
+            }
+          },
+          {
+            "name": "solicitante",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "ID ou pendente"
+            }
+          },
+          {
+            "name": "vencimento",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "atrasadas",
+                "hoje",
+                "proximos_7_dias",
+                "sem_prazo"
+              ]
+            }
+          },
+          {
+            "name": "ordenar",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recentes",
+                "antigas",
+                "prioridade",
+                "prazo",
+                "titulo"
+              ],
+              "default": "recentes"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "por_pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                10,
+                25,
+                50
+              ],
+              "default": 10
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Criar demanda como administrador gestor ou colaborador",
+        "responses": {
+          "201": {
+            "description": "Operação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Demanda"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "URL relativa da nova demanda"
+              }
+            }
+          },
+          "400": {
+            "description": "Erro 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Erro 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Erro 415",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarDemanda"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demandas/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consultar uma demanda",
+        "responses": {
+          "200": {
+            "description": "Operação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Demanda"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Alterar campos como administrador ou gestor",
+        "responses": {
+          "200": {
+            "description": "Operação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Demanda"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Erro 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Erro 415",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterarDemanda"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Excluir demanda como administrador",
+        "responses": {
+          "204": {
+            "description": "Operação realizada"
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Erro 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "summary": "Consultar IDs e nomes de usuários ativos",
+        "responses": {
+          "200": {
+            "description": "Operação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            },
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Erro 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "por_pagina",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                10,
+                25,
+                50
+              ],
+              "default": 10
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "solicitantes",
+                "responsaveis"
+              ],
+              "default": "solicitantes"
+            }
+          }
+        ]
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "summary": "Obter o contrato OpenAPI público",
+        "responses": {
+          "200": {
+            "description": "Operação realizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Erro 426",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Método não permitido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "token opaco 256 bits"
+      }
+    },
+    "schemas": {
+      "Demanda": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "descricao": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 5000
+          },
+          "solicitante_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "responsavel_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aberta",
+              "em_analise",
+              "em_andamento",
+              "aguardando",
+              "concluida",
+              "cancelada"
+            ],
+            "default": "aberta"
+          },
+          "prioridade": {
+            "type": "string",
+            "enum": [
+              "baixa",
+              "media",
+              "alta",
+              "critica"
+            ],
+            "default": "media"
+          },
+          "prazo": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "criado_por_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "data_criacao": {
+            "type": "string",
+            "nullable": true
+          },
+          "data_atualizacao": {
+            "type": "string",
+            "nullable": true
+          },
+          "data_conclusao": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CriarDemanda": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "titulo",
+          "descricao",
+          "solicitante_id"
+        ],
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "descricao": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 5000
+          },
+          "solicitante_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "responsavel_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aberta",
+              "em_analise",
+              "em_andamento",
+              "aguardando",
+              "concluida",
+              "cancelada"
+            ],
+            "default": "aberta"
+          },
+          "prioridade": {
+            "type": "string",
+            "enum": [
+              "baixa",
+              "media",
+              "alta",
+              "critica"
+            ],
+            "default": "media"
+          },
+          "prazo": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          }
+        }
+      },
+      "AlterarDemanda": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "descricao": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 5000
+          },
+          "solicitante_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "responsavel_id": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aberta",
+              "em_analise",
+              "em_andamento",
+              "aguardando",
+              "concluida",
+              "cancelada"
+            ],
+            "default": "aberta"
+          },
+          "prioridade": {
+            "type": "string",
+            "enum": [
+              "baixa",
+              "media",
+              "alta",
+              "critica"
+            ],
+            "default": "media"
+          },
+          "prazo": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          }
+        }
+      },
+      "Credenciais": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "email",
+          "senha"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "senha": {
+            "type": "string",
+            "format": "password",
+            "maxLength": 1024
+          }
+        }
+      },
+      "Erro": {
+        "type": "object",
+        "required": [
+          "error",
+          "request_id"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "request_id": {
+            "type": "string"
+          }
+        }
+      },
+      "Meta": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "pagina": {
+            "type": "integer"
+          },
+          "paginas": {
+            "type": "integer"
+          },
+          "por_pagina": {
+            "type": "integer"
+          },
+          "filtros": {
+            "type": "object"
+          }
+        }
+      },
+      "Token": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "example": 3600
+          },
+          "usuario": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "perfil": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+ROTEIRO SUGERIDO PARA REVISÃO NO DISCORD
+
+Cada integrante deve ler o código, repetir sua conferência e adaptar a mensagem ao que realmente verificou. Este roteiro não é conversa realizada, prova de autoria ou resposta do cliente.
+
+GABRIEL — PO
+Gurizada, o pedido desta sprint é permitir a integração do SGDI com outros sistemas por uma API segura e documentada. Na versão preparada temos consulta, cadastro, alteração e exclusão de demandas. Antes do aceite do cliente, precisamos confirmar: qual sistema vai integrar, quais dados pode receber, quem pode criar/alterar/excluir e se precisa de restrição por solicitante ou setor. A API preparada segue os perfis atuais; essas regras ainda precisam da confirmação dele.
+
+MURILO — TECH LEAD
+A integração está separada em /api/v1 e mantém a interface anterior. Vamos revisar na ordem banco, API, integração, console e testes. Ricardo confere migração; Naubert confere autenticação e permissões; eu reviso ligação com a aplicação e execução; Gabriel revisa contrato e interface; Tino repete os cenários e organiza as evidências. O CSV, a tela e a API agora usam a mesma consulta de filtros.
+
+RICARDO WERNER — BANCO
+Na parte do banco, a proposta usa api_tokens e api_login_limites. O token bruto não é salvo; ficam o hash, o usuário, a expiração e a revogação. Vou revisar o backup da migração, a preservação das demandas antigas e o teste de integridade antes de fazer meu commit.
+
+NAUBERT — BACKEND E SEGURANÇA
+A API exige Bearer mesmo quando a interface está sem login. Leitor consulta; colaborador também cria; gestor altera; administrador pode excluir. O token expira em uma hora e pode ser revogado. Conta inativa e troca de senha impedem reutilização. Vou conferir esses bloqueios e os erros JSON. Fora do próprio computador a API exige HTTPS.
+
+GABRIEL — PO E FRONTEND
+Para testar, podemos abrir /api/docs, conectar com uma conta fictícia e enviar as requisições no console. A senha é apagada do formulário e o token não aparece no print. Vou revisar se a documentação explica os campos, filtros, perfis e respostas sem expor dados sensíveis.
+
+TINO — TESTES E ENTREGA
+O registro preparado contém 95 testes aprovados no macOS. Vou repetir a suíte e conferir os prints de criação 201, alteração 200, bloqueio 403, token ausente 401 e a auditoria após exclusão. Também precisamos repetir no Windows: a configuração de CI está pronta, mas essa execução ainda não foi publicada. As evidências ficam na pasta evidencias do pacote da Sprint 7.
+
+MURILO — CORREÇÃO E REVISÃO
+O ponto de integração corrigido foi o risco de resultados diferentes no filtro de prazo entre listagem e CSV. O teste compara a quantidade e os registros de tela, CSV e API. Também foi corrigido o contraste da resposta JSON no console após a revisão visual. Antes dos commits, cada um precisa revisar e assumir apenas os arquivos do próprio pacote.
+
+GABRIEL — PERGUNTAS AO CLIENTE E ACEITE
+Perguntas para enviar ao cliente: 1) qual aplicação externa fará a integração? 2) pode acessar todas as demandas ou apenas as do solicitante/setor? 3) quais perfis podem criar, alterar e excluir? 4) os textos de título e descrição podem ser retornados? 5) a validade de uma hora é adequada e quem deve revogar credenciais? 6) há necessidade de anexos, comentários ou exclusão lógica? 7) quais limites de volume e disponibilidade são esperados? Após a demonstração, solicitar confirmação explícita de consulta, cadastro, alteração, restrições e auditoria. Registrar as respostas reais e mudanças acordadas. Ainda não há resposta nem aceite do cliente neste roteiro.
