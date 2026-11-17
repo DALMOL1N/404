@@ -1,0 +1,9 @@
+Execução real em Chrome, dados fictícios, 03/11/2026.
+Emissão pelo console: HTTP 200, senha apagada e token oculto.
+POST /demandas: HTTP 201, ID 8.
+Leitor: POST de criação recusado, HTTP 403.
+Revogação HTTP 204 e consulta sem token HTTP 401.
+Exclusão autenticada do cadastro de teste: HTTP 204.
+Filtro de prazo e download CSV conferidos pela interface.
+Console 390 px sem transbordamento da página.
+Erros de JavaScript: 0.

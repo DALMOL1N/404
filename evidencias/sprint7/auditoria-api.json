@@ -1,0 +1,95 @@
+{
+  "servico": "sgdi",
+  "gerado_em": "2026-11-04T00:39:26.441473+00:00",
+  "fuso": "UTC",
+  "filtros": {
+    "inicio": "",
+    "fim": "",
+    "usuario": "",
+    "evento": "",
+    "resultado": "",
+    "recurso_id": "8",
+    "request_id": ""
+  },
+  "quantidade": 3,
+  "eventos": [
+    {
+      "id": 33,
+      "instante": "2026-11-04T00:39:26.102+00:00",
+      "servico": "sgdi",
+      "evento": "demanda.excluida",
+      "resultado": "sucesso",
+      "usuario_id": 1,
+      "identidade": "autenticada",
+      "recurso": "demanda",
+      "recurso_id": 8,
+      "request_id": "e5db39a0d1334b5ebe5768b286d328fa",
+      "detalhes": {
+        "rota": "/api/v1/demandas/<int:demanda_id>",
+        "metodo": "DELETE"
+      }
+    },
+    {
+      "id": 26,
+      "instante": "2026-11-04T00:39:24.705+00:00",
+      "servico": "sgdi",
+      "evento": "demanda.alterada",
+      "resultado": "sucesso",
+      "usuario_id": 1,
+      "identidade": "autenticada",
+      "recurso": "demanda",
+      "recurso_id": 8,
+      "request_id": "7476be16f1d44fb7af4c5a1235e7ca39",
+      "detalhes": {
+        "rota": "/api/v1/demandas/<int:demanda_id>",
+        "metodo": "PATCH",
+        "alteracoes": {
+          "status": {
+            "antes": "aberta",
+            "depois": "concluida"
+          }
+        }
+      }
+    },
+    {
+      "id": 25,
+      "instante": "2026-11-04T00:39:24.489+00:00",
+      "servico": "sgdi",
+      "evento": "demanda.criada",
+      "resultado": "sucesso",
+      "usuario_id": 1,
+      "identidade": "autenticada",
+      "recurso": "demanda",
+      "recurso_id": 8,
+      "request_id": "04be9a11b3174bc78697125dda49cfee",
+      "detalhes": {
+        "rota": "/api/v1/demandas",
+        "metodo": "POST",
+        "alteracoes": {
+          "prioridade": {
+            "antes": null,
+            "depois": "alta"
+          },
+          "descricao": {
+            "alterado": true
+          },
+          "prazo": {
+            "antes": null,
+            "depois": "2026-11-20"
+          },
+          "titulo": {
+            "alterado": true
+          },
+          "status": {
+            "antes": null,
+            "depois": "aberta"
+          },
+          "solicitante_id": {
+            "antes": null,
+            "depois": 1
+          }
+        }
+      }
+    }
+  ]
+}

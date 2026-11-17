@@ -1,0 +1,119 @@
+[
+  {
+    "method": "POST",
+    "path": "/demandas",
+    "status": 201,
+    "request_id": "04be9a11b3174bc78697125dda49cfee",
+    "body": {
+      "data": {
+        "criado_por_id": 1,
+        "data_atualizacao": "2026-11-03 21:39:24",
+        "data_conclusao": null,
+        "data_criacao": "2026-11-03 21:39:24",
+        "descricao": "Demanda fictícia criada pelo console de integração da Sprint 7.",
+        "id": 8,
+        "prazo": "2026-11-20",
+        "prioridade": "alta",
+        "responsavel_id": null,
+        "solicitante_id": 1,
+        "status": "aberta",
+        "titulo": "Cadastro externo demonstrado"
+      },
+      "request_id": "04be9a11b3174bc78697125dda49cfee"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/demandas/8",
+    "status": 200,
+    "request_id": "7476be16f1d44fb7af4c5a1235e7ca39",
+    "body": {
+      "data": {
+        "criado_por_id": 1,
+        "data_atualizacao": "2026-11-03 21:39:24",
+        "data_conclusao": "2026-11-03 21:39:24",
+        "data_criacao": "2026-11-03 21:39:24",
+        "descricao": "Demanda fictícia criada pelo console de integração da Sprint 7.",
+        "id": 8,
+        "prazo": "2026-11-20",
+        "prioridade": "alta",
+        "responsavel_id": null,
+        "solicitante_id": 1,
+        "status": "concluida",
+        "titulo": "Cadastro externo demonstrado"
+      },
+      "request_id": "7476be16f1d44fb7af4c5a1235e7ca39"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/demandas?vencimento=atrasadas&por_pagina=10",
+    "status": 200,
+    "request_id": "2d2a349d4e424f61ab4981e1a9fbe0b5",
+    "body": {
+      "data": [
+        {
+          "criado_por_id": 1,
+          "data_atualizacao": "2026-11-04 00:32:44",
+          "data_conclusao": null,
+          "data_criacao": "2026-11-04 00:32:44",
+          "descricao": "Dados fictícios para testar integração na Sprint 7.",
+          "id": 1,
+          "prazo": "2026-11-02",
+          "prioridade": "alta",
+          "responsavel_id": 1,
+          "solicitante_id": 1,
+          "status": "aberta",
+          "titulo": "Integração com sistema externo"
+        }
+      ],
+      "meta": {
+        "filtros": {
+          "ordenar": "recentes",
+          "prioridade": "",
+          "q": "",
+          "responsavel": "",
+          "solicitante": "",
+          "status": "",
+          "vencimento": "atrasadas"
+        },
+        "pagina": 1,
+        "paginas": 1,
+        "por_pagina": 10,
+        "total": 1
+      },
+      "request_id": "2d2a349d4e424f61ab4981e1a9fbe0b5"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/demandas",
+    "status": 403,
+    "request_id": "bb48fd7112f14f8a8f0f6424246b4226",
+    "body": {
+      "error": {
+        "code": "forbidden",
+        "message": "Seu perfil não tem permissão para esta operação."
+      },
+      "request_id": "bb48fd7112f14f8a8f0f6424246b4226"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/demandas",
+    "status": 401,
+    "request_id": "8f92026731f04b19910b45924a5067cc",
+    "body": {
+      "error": {
+        "code": "unauthorized",
+        "message": "Autenticação Bearer necessária ou token inválido."
+      },
+      "request_id": "8f92026731f04b19910b45924a5067cc"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/demandas/8",
+    "status": 204
+  }
+]
