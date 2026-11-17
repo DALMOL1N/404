@@ -1,167 +1,222 @@
-# SGDI 404 v5 — Windows, macOS e Linux
+<p align="center">
+  <img src="static/logo-404.jpeg" alt="Logo da Equipe 404" width="190">
+</p>
 
-Aplicação Flask + SQLite para gestão de demandas, painel gerencial e auditoria. O menu permite escolher demonstração autenticada, uso local sem login ou acesso com senha própria.
+<h1 align="center">SGDI 404</h1>
 
-## Windows — execução com dois cliques
+<p align="center">
+  <strong>Sistema de Gestão de Demandas Internas</strong><br>
+  Organize solicitações, acompanhe prazos e consulte o histórico das operações.
+</p>
 
-Instale **Python 3.11 ou superior**, baixe o projeto por **Code → Download ZIP**,
-extraia a pasta inteira e abra **INICIAR_WINDOWS.bat**. A instalação inicial precisa
-de internet. O menu prepara `.venv` e oferece quatro opções:
+<p align="center">
+  <a href="https://github.com/DALMOL1N/404/actions/workflows/testes.yml"><img src="https://github.com/DALMOL1N/404/actions/workflows/testes.yml/badge.svg" alt="Testes Windows e Linux"></a>
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python 3.11 ou superior">
+  <img src="https://img.shields.io/badge/Backend-Flask-14302F?logo=flask&logoColor=white" alt="Backend Flask">
+  <img src="https://img.shields.io/badge/Banco-SQLite-045B59?logo=sqlite&logoColor=white" alt="Banco SQLite">
+</p>
 
-1. **Demonstração Sprint 5:** http://127.0.0.1:5056, conta `admin@404.local`, senha
-   pública fictícia `DemoSprint5!2026`.
-2. **Sistema local sem login:** http://127.0.0.1:5050.
-3. **Autenticado com senha própria:** http://127.0.0.1:5056, senha inicial escolhida
-   no terminal. Banco e chave próprios, separados da demonstração.
-4. **Testes:** executa toda a suíte em bancos temporários.
+<p align="center">
+  <a href="#sobre-o-projeto">Sobre</a> ·
+  <a href="#funcionalidades">Funcionalidades</a> ·
+  <a href="#comece-pela-demonstracao">Executar</a> ·
+  <a href="#testes-e-evidencias">Testes</a> ·
+  <a href="#equipe-404">Equipe</a>
+</p>
 
-Pare com **Ctrl+C**. As opções 1 e 3 compartilham a porta 5056: use uma por vez.
-Instruções manuais: [COMO_EXECUTAR_WINDOWS.txt](COMO_EXECUTAR_WINDOWS.txt).
-O projeto inclui `tzdata` para o fuso de São Paulo, fecha conexões SQLite temporárias
-explicitamente e instala Gunicorn somente fora do Windows.
+---
 
-[![Testes Windows e Linux](https://github.com/DALMOL1N/404/actions/workflows/testes.yml/badge.svg)](https://github.com/DALMOL1N/404/actions/workflows/testes.yml)
+<a id="sobre-o-projeto"></a>
 
-O workflow executa os testes em Windows e Linux com Python 3.12. Consulte a aba
-Actions para verificar o resultado da versão publicada. Os logs antigos em
-`evidencias` continuam identificando a validação original da Sprint 5 em macOS.
+## Sobre o projeto
 
+O **SGDI 404** centraliza o cadastro e o acompanhamento de demandas internas. Cada solicitação reúne título, descrição, solicitante, prioridade, responsável, status e prazo, com filtros para encontrar o que precisa de atenção.
 
+O projeto evoluiu ao longo de sete sprints, acrescentando cadastro de usuários, consultas, indicadores gerenciais, auditoria e integração por API. A aplicação utiliza **Python, Flask e SQLite**, com interface em HTML, CSS e JavaScript.
 
-## Executar
+> **Sprint 7 em integração.** O banco e o backend da API já estão na `main`. A ativação dos endpoints depende também da publicação do contrato OpenAPI e do console de integração. O pacote de testes e a documentação da Sprint 7 ainda precisam ser incorporados. O sistema web e a demonstração continuam disponíveis durante essa etapa.
 
-Use Python 3.11 ou superior. Dentro desta pasta:
+<a id="funcionalidades"></a>
 
-```sh
+## Funcionalidades
+
+| Área | O que o sistema oferece |
+| --- | --- |
+| **Demandas** | Cadastro, edição, consulta, exclusão, comentários e histórico. |
+| **Pessoas e perfis** | Solicitante vinculado a usuário cadastrado e permissões por perfil no modo autenticado. |
+| **Busca e filtros** | Pesquisa combinada com status, prioridade, responsável, solicitante e vencimento. |
+| **Prazos** | Todas, atrasadas, vencem hoje, próximos sete dias ou sem prazo definido. |
+| **Navegação** | Ordenação e paginação de 10, 25 ou 50 registros, preservando os filtros. |
+| **Exportação e ações rápidas** | CSV do conjunto filtrado, alteração rápida de status e opção de assumir uma demanda. |
+| **Painel gerencial** | Indicadores, gráficos, acompanhamento de atrasos e tempo de resolução. |
+| **Auditoria** | Registro de operações, consulta paginada e exportação JSON para perfis autorizados. |
+| **API REST** | Banco e backend publicados. Console, contrato e testes estão na etapa final de integração. |
+
+### Telas do sistema
+
+<details>
+<summary><strong>Ver capturas da listagem e da auditoria</strong></summary>
+
+As imagens abaixo são registros de versões anteriores entregues, com dados de demonstração.
+
+**Consulta com filtros combinados — Sprint 3**
+
+![Listagem de demandas com filtros combinados](sprint3/02-filtros-combinados.png)
+
+**Auditoria de operações — Sprint 5**
+
+![Tela de consulta da auditoria](evidencias/auditoria.png)
+
+</details>
+
+<a id="comece-pela-demonstracao"></a>
+
+## Comece pela demonstração
+
+A demonstração utiliza **144 demandas fictícias**, em um banco separado, para explorar combinações de status, prioridades, responsáveis e prazos. Reiniciar a carga acrescenta cenários ausentes e preserva as edições dos registros existentes.
+
+### Windows
+
+1. Instale **Python 3.11 ou superior**, com o launcher `py` ou a opção **Add Python to PATH**.
+2. Baixe o repositório em **Code → Download ZIP** e extraia a pasta inteira.
+3. Abra **`DEMO_SPRINT7_WINDOWS.bat`**.
+4. Aguarde a preparação do ambiente e acesse **http://127.0.0.1:5070/**.
+
+A primeira execução precisa de internet para instalar as dependências. Para escolher outro modo, abra **`INICIAR_WINDOWS.bat`**.
+
+### macOS e Linux
+
+No terminal, dentro da pasta do projeto:
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-python3 app.py
+python -m pip install -r requirements.txt
+python demo_sprint7.py
 ```
 
-Abra http://127.0.0.1:5050. O banco demandas.db é criado ou migrado automaticamente; os dados existentes são preservados e as migrações que alteram o esquema criam backup. Demandas antigas cujo solicitante era texto livre ficam com vínculo pendente: selecione manualmente o usuário correto na edição.
+Abra **http://127.0.0.1:5070/**. Para encerrar o servidor, use **Ctrl+C** no terminal.
 
-No modo local, operações são registradas como **Operação local**. Essa conta não aparece na escolha de solicitante/responsável. O cadastro de pessoas não exige senha no modo local. Todos que acessarem essa instância local poderão operar com os mesmos privilégios. O servidor inicia apenas em 127.0.0.1; o modo local é destinado à demonstração/uso na própria máquina.
+### Contas da demonstração
 
-## Sprint 3
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Administrador | `admin@404.local` | `DemoSprint7!2026` |
+| Gestor | `gestor@example.test` | `DemoSprint7!2026` |
+| Colaborador | `colaborador@example.test` | `DemoSprint7!2026` |
+| Leitor | `leitor@example.test` | `DemoSprint7!2026` |
 
-- Filtros por status, prioridade, responsável e solicitante combinados com busca.
-- Consulta de demandas sem responsável e responsáveis inativos históricos.
-- 10, 25 ou 50 registros por página; números, primeira/última e salto direto.
-- Filtros e ordenação preservados ao navegar; novo filtro volta à primeira página.
-- Ordenação com desempate por ID, limites de página tratados e estado vazio.
-- Edição preserva responsável inativo existente; novo vínculo exige usuário ativo.
-- Integra a Sprint 2: solicitante por ID, relatório, migração e histórico.
+Essas contas e senhas são **públicas e fictícias**, exclusivas da demonstração. Para trabalhar com seus próprios dados, utilize o modo autenticado e escolha uma senha própria.
 
-## Verificação
+### Outros modos de execução
 
-```sh
-python3 -m unittest discover -s tests -v
+Com o ambiente preparado e ativado:
+
+| Modo | Comando | Endereço | Uso |
+| --- | --- | --- | --- |
+| Demonstração atual | `python demo_sprint7.py` | `http://127.0.0.1:5070/` | 144 cenários fictícios e perfis de exemplo. |
+| Autenticado | `python iniciar_autenticado.py` | `http://127.0.0.1:5056/` | Senha própria, solicitada na primeira execução. |
+| Local sem login | `python app.py` | `http://127.0.0.1:5050/` | Uso na própria máquina, com autoria técnica “Operação local”. |
+| Demonstração da Sprint 5 | `python demo_sprint5.py` | `http://127.0.0.1:5056/` | Base fictícia anterior para consultar a auditoria. |
+
+Os modos da porta `5056` devem ser executados um por vez. No Windows, o menu `INICIAR_WINDOWS.bat` oferece essas opções e a execução dos testes.
+
+## Integração por API
+
+O backend da Sprint 7 prepara as rotas sob `/api/v1`, com autenticação **Bearer**, tokens com expiração e revogação, validação de dados e autorização por perfil. As mudanças de negócio e os eventos de auditoria compartilham a mesma transação.
+
+Na `main` atual, a API permanece desativada até a integração de `docs/openapi.json` e `templates/api_docs.html`. Com esses componentes presentes, o console fica disponível em **`/api/docs`**.
+
+O estado da integração e a divisão dos pacotes estão em [Integração da Sprint 7](docs/INTEGRACAO_SPRINT7.md) e [Commits por integrante](docs/COMMITS_SPRINT7.md).
+
+<a id="testes-e-evidencias"></a>
+
+## Testes e evidências
+
+Com o ambiente virtual ativado, execute:
+
+```bash
+python -m unittest discover -s tests -v
 ```
 
-31 testes, em bancos temporários. Os testes do modo autenticado continuam sendo executados para evitar regressão. Não executar esses testes contra o banco de produção; a suíte já cria seus próprios bancos.
+A suíte cria bancos temporários para verificar cadastro, migrações, filtros, paginação, indicadores, permissões, auditoria e integração. Os testes não utilizam o banco operacional.
 
-## Demonstração isolada
+**Conferência local de 16/11/2026:** 68 testes aprovados na `main` com os pacotes de banco e backend; 100 testes aprovados em uma cópia isolada com os pacotes pendentes de interface e testes. O segundo resultado não representa a versão já publicada no GitHub.
 
-```sh
-python3 demonstracao.py
+O workflow [Testes Windows e Linux](https://github.com/DALMOL1N/404/actions/workflows/testes.yml) executa a suíte em ambos os sistemas. Consulte a execução do commit desejado para conferir seu resultado.
+
+Registros disponíveis no repositório:
+
+- [Integração até a Sprint 5](evidencias/testes-integracao-main-sprint5.txt).
+- [Validação anterior da integração da Sprint 7](evidencias/testes-main-integracao-sprint7.txt).
+- [Validação anterior da montagem completa dos pacotes](evidencias/testes-montagem-pacotes-sprint7.txt).
+- [Capturas e exportações de auditoria](evidencias/).
+
+Cada evidência mantém a data e o escopo da execução que a gerou. Os totais são de versões diferentes e não devem ser somados.
+
+## Evolução por sprint
+
+| Sprint | Entrega principal |
+| --- | --- |
+| **1** | Base do sistema e fluxo de cadastro e acompanhamento de demandas. |
+| **2** | Solicitante vinculado a um usuário cadastrado. |
+| **3** | Filtros combinados, ordenação e paginação. |
+| **4 — Emergencial** | Painel gerencial, indicadores e ciclo de conclusão. |
+| **5** | Auditoria central com preservação dos eventos após exclusões. |
+| **6** | Contribuição externa: CSV da listagem filtrada e ações rápidas. |
+| **7** | Filtros compartilhados, demonstração ampliada e integração por API REST. |
+
+A contribuição da Sprint 6 foi recebida de **Ricardo Drews, de outro grupo**, com seu commit original preservado no histórico.
+
+## Estrutura do projeto
+
+```text
+app.py                  Aplicação web e integração dos módulos
+init_db.py              Inicialização e migrações do banco
+database.py             Conexões e transações SQLite
+consultas.py            Critérios compartilhados de busca e filtros
+catalogo.py             Status, prioridades, perfis e ordenações
+analytics.py            Indicadores do painel gerencial
+auditoria.py            Registro, consulta e exportação de eventos
+audit_schema.py         Estrutura da auditoria
+api.py                  Backend REST da Sprint 7
+api_schema.py           Estrutura de tokens e limites de autenticação
+dados_demonstracao.py   Carga dos cenários fictícios
+demo_sprint7.py         Inicialização da demonstração atual
+templates/              Páginas HTML
+static/                 Logo, estilos e scripts
+tests/                  Testes automatizados
+docs/                   Decisões, integração e divisão de entregas
+evidencias/             Registros de testes e capturas do sistema
 ```
 
-Abra http://127.0.0.1:5053. Esse comando usa `demonstracao.db`, separado de `demandas.db`, com 63 demandas fictícias e contas de exemplo. Não é necessário apagar dados do projeto para demonstrar a entrega.
+## Dados, acesso e limites
 
-## Autenticação opcional
+- O banco é criado ou migrado na inicialização. As migrações previstas que alteram o esquema geram backup e preservam os registros existentes.
+- Demandas antigas com solicitante em texto livre podem exigir conciliação manual com o usuário correto.
+- O modo sem login utiliza uma conta técnica administrativa. Para identificar pessoas e aplicar permissões individuais, use o modo autenticado.
+- Banco, `.venv`, `.env`, `.session-secret` e credenciais reais ficam fora do versionamento.
+- Os inicializadores escutam em `127.0.0.1`. Para disponibilizar o sistema na internet, é necessária uma hospedagem com backend Python e configuração adequada de acesso e HTTPS. GitHub Pages não executa o backend Flask.
+- SQLite e as agregações em memória atendem à demonstração e às bases pequenas verificadas. Não há resultado de teste de carga nesta entrega.
+- A auditoria preserva os eventos após excluir demandas e evita registrar senhas, tokens e textos livres. Quem administra diretamente o arquivo SQLite mantém controle sobre o armazenamento.
 
-Para uma instância que precise de login, configure `SGDI_REQUIRE_LOGIN=1` e `SECRET_KEY` (valor aleatório forte). Para um banco novo nesse modo, configure também `ADMIN_INITIAL_PASSWORD` com pelo menos 12 caracteres. Consulte init_db.py para a inicialização. A chave deve ser mantida entre reinícios em uma instalação compartilhada. O modo local gera uma chave temporária a cada execução.
+<a id="equipe-404"></a>
 
-## Limites conhecidos
+## Equipe 404
 
-A paginação usa LIMIT/OFFSET; alterações concorrentes podem deslocar páginas. A validação executada usa 63 registros, sem caracterizar teste de carga. Exportação e múltiplos valores no mesmo filtro estão fora desta entrega. Regras propostas e aceite do cliente devem ser confirmados pelo PO.
+| Integrante | Responsabilidade na G2 |
+| --- | --- |
+| **Ricardo Trento Werner** | Banco de dados e migrações. |
+| **Naubert Piva Migliavacca** | Backend e segurança. |
+| **Murilo Trevisol Dalmolin** | Tech Lead, arquitetura e integração. |
+| **Gabriel Pasuch Granja** | Product Owner, requisitos e frontend. |
+| **Tino Markus Bueno Navarro** | Testes, evidências e entrega. |
 
+Os commits e os registros de revisão identificam as contribuições publicadas. A divisão de responsabilidades não substitui a confirmação individual do trabalho realizado.
 
-## Sprint Emergencial
+---
 
-O painel gerencial inclui contagens e percentuais, críticas e críticas atrasadas, volume em aberto por responsável, médias de resolução, gráficos e filtros combinados. A exportação CSV contém somente críticas atrasadas e respeita os demais filtros. Nome da empresa: variável SGDI_COMPANY_NAME (padrão Equipe 404).
-
-A data de conclusão passa a ser registrada ao concluir uma demanda e é preservada em edições sem mudança de status. Reabertura remove essa data; uma nova conclusão mede o intervalo desde a criação original até a última conclusão. A migração cria backup antes de adicionar a coluna e não inventa datas para o legado.
-
-Escolhas documentadas, a validar pelo PO: peso 2 para críticas na média ponderada; dias corridos; filtro pela data de criação; SLA medido pelo prazo cadastrado, com exclusão de canceladas, sem prazo, sem responsável e concluídas sem data válida. Demandas abertas ainda no prazo contam como regulares na data da consulta.
-
-Execute python3 demo_emergencial.py e abra http://127.0.0.1:5054 para uma demonstração isolada com 48 registros fictícios. O sistema normal continua sendo executado com python3 app.py em 5050.
-
-40 testes automatizados. Os cálculos carregam o conjunto filtrado em memória; esta entrega foi verificada com bases pequenas e não caracteriza teste de carga. O modo local sem login é destinado à demonstração na própria máquina.
-
-## Sprint 05 — auditoria central
-
-Versão preparada em 20/10/2026. A auditoria em `/auditoria` registra autenticação,
-saída, demandas criadas/alteradas/excluídas, comentários (sem corpo), usuários,
-recusas de acesso/validação, erros internos, consulta e exportação da auditoria e
-exportação do painel. Admin e gestor podem consultar e exportar JSON; os demais
-perfis recebem 403. Cada requisição recebe um UUID novo em X-Request-ID.
-
-### Demonstração para aula
-
-Instale as dependências (`python3 -m pip install -r requirements.txt`) e execute:
-
-    python3 demo_sprint5.py
-
-Abra http://127.0.0.1:5056. Use `admin@404.local`, `gestor@example.test` ou
-`leitor@example.test`, com senha `DemoSprint5!2026`. São contas fictícias e a senha
-é pública: use apenas a base de demonstração. As ações iniciais são feitas pelo
-cliente HTTP de teste e geram registros reais sobre os dados fictícios. Não são
-conversas, decisões ou atividades reais da equipe. O banco da demo é separado.
-
-### Uso autenticado local com suas próprias contas
-
-    python3 iniciar_autenticado.py
-
-Na primeira execução, escolha a senha do administrador (mínimo 12 caracteres).
-Banco próprio: `sgdi-autenticado.db`; chave de sessão persistente: `.session-secret`
-(permissão restrita no macOS/Linux; não versionar). Porta 5056. Não execute ao mesmo
-tempo que a demonstração na mesma porta. Para configurar um banco existente, use
-`SGDI_REQUIRE_LOGIN=1`, `SECRET_KEY`, `DATABASE_PATH` e a credencial já cadastrada.
-Contas antigas do modo sem login possuem senhas aleatórias e não servem como
-credenciais pessoais. Faça uma migração de acesso planejada antes de uso real.
-
-`python3 app.py` continua abrindo o modo local sem login, na porta 5050. Nesse modo,
-a conta técnica tem acesso administrativo e TODOS os eventos são atribuídos à
-operação local: esse modo não fornece autoria humana nem controle por pessoa.
-
-### Política de auditoria implementada
-
-- UTC, ID do usuário, tipo de identidade, evento/resultado, recurso/ID, request_id,
-  rota padronizada e método. Não são registrados IP, cookies, senha, e-mail, nome,
-  corpo de comentário ou valores livres de título/descrição.
-- Alterações de status, prioridade, responsável/solicitante (IDs), prazo, perfil e
-  situação guardam antes/depois; título/descrição guardam apenas `alterado: true`.
-- Uma transação grava a mudança de negócio e o evento; falha do log reverte a mudança.
-- A tabela não possui exclusão em cascata. Triggers barram UPDATE/DELETE comuns.
-  Um administrador com acesso ao arquivo SQLite ainda pode remover os triggers:
-  isto NÃO constitui armazenamento inviolável ou auditoria criptográfica.
-- Histórico v4 permanece separado. Não inventamos registros anteriores à implantação.
-- Migração cria backup SQLite antes de acrescentar a tabela ao banco v4.
-- Consulta paginada em 25, filtros por data UTC, usuário, evento, resultado, recurso
-  e requisição; exportação até 1000 eventos. Acima disso, exige restringir filtros.
-- Sem expurgo automático até o cliente definir retenção e autorização. O banco
-  crescerá; acompanhar volume, preservar backups com acesso restrito e planejar
-  retenção. Não há política de prazo acordada, serviço externo de logs, alertas,
-  rate limiting ou rastreamento distribuído nesta entrega.
-- Falhas internas no console usam mensagem fixa e request_id; sem payload de exceção.
-
-### Testes e evidências
-
-    python3 -m unittest discover -s tests -v
-
-56 testes (40 regressões + 16 cenários Sprint 05). Evidências em `evidencias/`:
-`testes-sprint5.txt`, `verificacao-navegador.txt`, imagens e `auditoria-exportada.json`.
-Prints usam a base fictícia da demonstração; não representam dados reais do cliente.
-Windows: use `py` no lugar de `python3`. Não testado em Windows nesta entrega.
-
-## Compatibilidade de 27/10/2026
-
-Além dos 56 testes anteriores, três regressões verificam fechamento e rollback
-SQLite e disponibilidade do fuso horário. Total: **59 testes**. Os testes no CI
-usam `PYTHONTZPATH` vazio para exercitar o pacote `tzdata`.
-As conexões da aplicação por requisição continuam fechadas no teardown do Flask.
-
-Fontes técnicas: [zoneinfo e Windows](https://docs.python.org/3/library/zoneinfo.html#data-sources)
-e [context manager do SQLite](https://docs.python.org/3/library/sqlite3.html#how-to-use-the-connection-context-manager).
+<p align="center">
+  <strong>Equipe 404</strong><br>
+  Projeto acadêmico de gestão de demandas internas.
+</p>
