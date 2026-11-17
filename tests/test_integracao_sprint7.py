@@ -31,6 +31,9 @@ class IntegracaoSprint7Tests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(DISTINCT solicitante_id) FROM demandas').fetchone()[0],4)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM historico').fetchone()[0],144)
             self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(),[])
+            self.assertGreater(db.execute('SELECT COUNT(DISTINCT date(data_criacao)) FROM demandas').fetchone()[0],1)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM demandas WHERE status='concluida' AND data_conclusao>data_criacao").fetchone()[0],24)
+            self.assertAlmostEqual(db.execute("SELECT AVG(julianday(data_conclusao)-julianday(data_criacao)) FROM demandas WHERE status='concluida'").fetchone()[0],5.5)
 
     def test_carga_preserva_edicao_e_registro_preexistente(self):
         popular_demonstracao(self.app,'DemoSprint7!2026')

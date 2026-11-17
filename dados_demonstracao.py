@@ -63,4 +63,36 @@ def popular_demonstracao(app,password):
                     if response.status_code!=302:raise RuntimeError(f'Falha ao criar o cenário fictício {number}.')
                     created+=1
         client.post('/logout',data={'csrf_token':csrf})
+    ajustar_cronologia_demonstracao(app)
     return {'criadas':created,'previstas':144}
+
+def ajustar_cronologia_demonstracao(app):
+    """Distribui somente cenários fictícios intactos; não reescreve a auditoria."""
+    if not app.config.get('DEMONSTRACAO') or not app.config.get('AUTH_REQUIRED'):
+        raise RuntimeError('A cronologia fictícia exige demonstração autenticada.')
+    today=app.config.get('REPORT_TODAY') or datetime.now(ZoneInfo('America/Sao_Paulo')).date()
+    changed=0
+    with sqlite_transaction(app.config['DATABASE']) as db:
+        rows=db.execute('SELECT id,titulo,status,prioridade,data_criacao,data_atualizacao,data_conclusao,descricao FROM demandas WHERE titulo LIKE ?', (PREFIX+'%',)).fetchall()
+        for did,title,status,priority,created,updated,completed,description in rows:
+            # Edições e datas já ajustadas são preservadas nas próximas execuções.
+            if created!=updated or not description.startswith('DADOS FICTÍCIOS PARA TESTAR OS FILTROS DO SGDI.'):
+                continue
+            if status=='concluida' and completed!=created:
+                continue
+            try:number=int(title.split(' | ',1)[0][len(PREFIX):])
+            except ValueError:continue
+            if not 1<=number<=144:continue
+            age=6+(number*7+number//6)%30
+            conclusion=None
+            if status=='concluida':
+                duration=(1,3,5,10)[(number-1)%4]+(3 if priority=='critica' else 0)
+                end=datetime.combine(today,datetime.min.time()).replace(hour=12)-timedelta(days=1+number%6)
+                start=end-timedelta(days=duration)
+                conclusion=end.isoformat(' ','seconds')
+            else:
+                start=datetime.combine(today,datetime.min.time()).replace(hour=9)-timedelta(days=age)
+            db.execute('UPDATE demandas SET data_criacao=?,data_conclusao=? WHERE id=?',
+                       (start.isoformat(' ','seconds'),conclusion,did))
+            changed+=1
+    return changed

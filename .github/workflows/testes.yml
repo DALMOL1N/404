@@ -28,7 +28,7 @@ jobs:
       - name: Executar suite completa
         run: python -m unittest discover -s tests -v
       - name: Verificar inicializacao da demonstracao
-        run: python -c "import runpy; app=runpy.run_path('demo_sprint5.py')['app']; response=app.test_client().get('/login'); assert response.status_code == 200; print('Demonstracao inicializada')"
+        run: python -c "import runpy; app=runpy.run_path('demo_sprint7.py')['app']; response=app.test_client().get('/login'); assert response.status_code == 200; print('Demonstracao inicializada')"
       - name: Verificar preparador Windows
         if: runner.os == 'Windows'
         shell: cmd
